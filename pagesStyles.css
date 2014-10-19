@@ -19,3 +19,8 @@ li {
 img {
     display: inline;
 }
+
+a {
+    text-decoration: none;
+    color: green;
+}

@@ -99,7 +99,9 @@ li {
     float: left;
     background-color: black;
     padding:0;
-    width: 10em;
+    padding-left: 0.4em;
+    padding-right: 0.4em;
+    width: 8em;
     text-align: center;
     color: white;
     height: 1.5em;

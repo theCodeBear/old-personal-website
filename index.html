@@ -19,8 +19,8 @@
         function navClick(option) {
             if (option == "skills")
                 document.getElementById("mainFrame").src="TechSkills.html";
-            else if (option == "currently")
-                document.getElementById("mainFrame").src="Currently.html";
+            else if (option == "blog")
+                document.getElementById("mainFrame").src="http://toddkronenberg.wordpress.com";
             else if (option == "portfolio")
                 document.getElementById("mainFrame").src="Portfolio.html";
             else if (option == "education")
@@ -31,6 +31,8 @@
                 document.getElementById("mainFrame").src="resume xml file.xml";
             else if (option == "about")
                 document.getElementById("mainFrame").src="AboutMe.html";
+            else if (option == "contact")
+                document.getElementById("mainFrame").src="ContactInfo.html";
         }
 
     </script>
@@ -41,21 +43,20 @@
         <div id="background">
             <div id="todd"> Todd Kronenberg </div>
             <span style="color: red;"> toddkronenberg@gmail.com </span> <br>
-            <a href="http://www.linkedin.com/pub/todd-kronenberg/20/96/165/"> LinkedIn Profile </a>
-            &nbsp---&nbsp
             <div id="resumeDL"><a href="Todd Kronenberg Resume.pdf" download>Download my Resume (pdf)</a></div>
         </div>
     </header>
 
     <nav>
         <ul>
-            <li class="navLeft" onclick="navClick('portfolio');">Portfolio </li>
-            <li class="navMiddle" onclick="navClick('skills');">Technical Skills </li>
-            <li class="navMiddle" onclick="navClick('currently');">Currently I am... </li>
-            <li class="navMiddle" onclick="navClick('education');">Education </li>
-            <li class="navMiddle" onclick="navClick('experience');">Work Experience </li>
-            <li class="navMiddle" onclick="navClick('resume');">Resume </li>
-            <li class="navRight" onclick="navClick('about');">About Me </li>
+            <li class="navLeft" onclick="navClick('portfolio');">Portfolio</li>
+            <li class="navMiddle" onclick="navClick('skills');">Technical Skills</li>
+            <li class="navMiddle" onclick="navClick('education');">Education</li>
+            <li class="navMiddle" onclick="navClick('experience');">Work Experience</li>
+            <li class="navMiddle" onclick="navClick('resume');">Resume</li>
+            <li class="navMiddle" onclick="navClick('blog');">Blog</li>
+            <li class="navMiddle" onclick="navClick('about');">About Me</li>
+            <li class="navRight" onclick="navClick('contact');">Contact Info</li>
         </ul>
     </nav>
 
