@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<!-- DTD Start -->
+<!DOCTYPE resume
+[
+<!ELEMENT resume (contactInfo, education, skills, coursework, workExperience)>
+<!ELEMENT contactInfo (author, phone*, email+, address, url*)>
+<!ELEMENT author (#PCDATA)>
+<!ELEMENT phone (#PCDATA)>
+<!ELEMENT email (#PCDATA)>
+<!ELEMENT address (#PCDATA)>
+<!ELEMENT url (#PCDATA)>
+<!ELEMENT education (school+, major+, gpa?, graduationDate?)>
+<!ELEMENT school (#PCDATA)>
+<!ELEMENT major (#PCDATA)>
+<!ELEMENT gpa (#PCDATA)>
+<!ELEMENT graduationDate (#PCDATA)>
+<!ELEMENT skills (languages?, software?)>
+<!ELEMENT languages (lang+)>
+<!ELEMENT lang (#PCDATA)>
+<!ELEMENT software (program)>
+<!ELEMENT program (#PCDATA)>
+<!ELEMENT coursework (course+)>
+<!ELEMENT course (#PCDATA)>
+<!ELEMENT workExperience (job*)>
+<!ELEMENT job (company, position, startDate, endDate, duties+)>
+<!ELEMENT company (#PCDATA)>
+<!ELEMENT position (#PCDATA)>
+<!ELEMENT startDate (#PCDATA)>
+<!ELEMENT endDate (#PCDATA)>
+<!ELEMENT duties (#PCDATA)>
+]>
+<!-- DTD Finish -->
+
+
+<!-- link to the XSLT stylesheet
+<?xml-stylesheet type="text/xsl" href="resume xslt.xsl"?> -->
+<!-- XML -->
+<resume>
+    <contactInfo>
+        <author>Todd Kronenberg</author>
+        <phone>857-498-0833</phone>
+        <email>toddkronenberg@gmail.com</email>
+        <address>3135 Metropolitan Way, Salt Lake City, UT 84109</address>
+        <url> www.toddkronenberg.com </url>
+    </contactInfo>
+    <education>
+        <school>Wentworth Institute of Technology</school>
+        <major>Computer Science</major>
+        <gpa>3.88</gpa>
+        <graduationDate>N/A</graduationDate>
+    </education>
+    <education>
+        <school>University of Mary Washington</school>
+        <major>History</major>
+        <graduationDate>May 2006</graduationDate>
+    </education>
+    <skills>
+        <languages>
+            <langu>C</langu>
+            <langu>C++</langu>
+            <langu>Python</langu>
+            <langu>Java</langu>
+            <langu>HTML5</langu>
+            <langu>CSS3</langu>
+            <langu>JavaScript</langu>
+            <langu>jQuery</langu>
+            <langu>AJAX</langu>
+            <langu>PHP</langu>
+            <langu>SQL</langu>
+        </languages>
+        <software>
+            <program>Visual Studio</program>
+            <program>Eclipse</program>
+            <program>WireShark</program>
+            <program>Git</program>
+            <program>Vi</program>
+            <program>MySQL</program>
+            <program>Unix/Linux</program>
+        </software>
+    </skills>
+    <coursework>
+        <course>C++ OOP</course>
+        <course>Java OOP</course>
+        <course>Java Data Structures</course>
+        <course>Computer Architecture</course>
+        <course>Assembly Language</course>
+        <course>Database Management Systems</course>
+        <course>Computer Graphics</course>
+        <course>Operating Systems</course>
+        <course>Web Development</course>
+        <course>Cryptography and Network Security</course>
+        <course>Local and Wide Area Networks</course>
+        <course>Algorithm Design and Analysis</course>
+        <course>Calculus 1</course>
+        <course>Calculus 2</course>
+        <course>Discrete Mathematics</course>
+        <course>Probability and Statistics</course>
+        <course>Linear Algebra</course>
+    </coursework>
+    <workExperience>
+        <job>
+            <company>AIR Worldwide</company>
+            <position>IS Co-op</position>
+            <startDate>August 2013</startDate>
+            <endDate>December 2013</endDate>
+            <duties>Worked as member of the Help Desk in the IT Department.</duties>
+            <duties>In charge of getting machiens imaged and ready for new hires each week.
+            </duties>
+            <duties>Worked on a ticketing system to handle any technical issues that arose
+                for fellow employees.</duties>
+        </job>
+        <job>
+            <company>Stanley Steemer</company>
+            <position>Technician Assistant</position>
+            <startDate>October 2010</startDate>
+            <endDate>February 2011</endDate>
+            <duties>Provided cleaning services and on-site sales to customers.</duties>
+        </job>
+        <job>
+            <company>Reston Association</company>
+            <position>Natural Areas Field Worker</position>
+            <startDate>March 2009</startDate>
+            <endDate>July 2011</endDate>
+            <duties>Helped lead groups of volunteers on a monthly basis. Focused on
+                invasive plant management.</duties>
+        </job>
+        <job>
+            <company>CarMax</company>
+            <position>Mail Clerk</position>
+            <startDate>February 2008</startDate>
+            <endDate>September 2008</endDate>
+            <duties>Performed data entry and used Microsoft Excel and mailing software.
+                Provided mail services to the home office.</duties>
+        </job>
+        <job>
+            <company>Venturi Staffing (CarMax)</company>
+            <position>Temporary Worker (Background Screening)</position>
+            <startDate>November 2007</startDate>
+            <endDate>February 2008</endDate>
+            <duties>Performed clerical duties consisting of data entry, using computer
+                software to run background checks, as well as filing and other office
+                duties for the Background Screening Department of CarMax.</duties>
+        </job>
+        <job>
+            <company>VA Runner</company>
+            <position>Sales Associate</position>
+            <startDate>June 2005</startDate>
+            <endDate>June 2007</endDate>
+            <duties>Retail sales of running related products.</duties>
+            <duties>Filled in as Sunday Manager each week and was in charge of the store
+                on days when the managers were not working.</duties>
+        </job>
+    </workExperience>
+</resume>

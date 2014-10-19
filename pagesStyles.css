@@ -1,0 +1,21 @@
+header {
+    font-size: 2em;
+    text-align: center;
+}
+
+ul {
+    list-style-type: none;
+    padding-top: 1em;
+    padding-bottom: 1em;
+    background-color: white;
+}
+
+li {
+    display: inline;
+    padding: 0 2em 0 2em;
+    font-size: 1.2em;
+}
+
+img {
+    display: inline;
+}

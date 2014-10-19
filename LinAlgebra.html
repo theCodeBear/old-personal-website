@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+
+<!-- Portfolio page for the Linear Algebra Cryptology C++ program -->
+
+
+<html>
+<head>
+    <title> Linear Algebra Program </title>
+    <link rel="stylesheet" type="text/css" href="portfolioStyles.css">
+</head>
+<body>
+    <header> Linear Algebra Hill Cipher in C++ </header>
+    <p> In the fall of 2012 I had to do a group project in my Linear Algebra course on a self-assigned topic.
+        We chose Cryptography and I wrote the following program in C++ for our project. It uses the
+        cryptological method known as the Hill Cipher.
+        <br>
+        You type in a plain text message and the program puts the characters into a three-row matrix, the
+        characters going down and then to the right. The ASCII characters are then converted into their
+        numerical ASCII values, which forms a new matrix of integers. A 3x3 encoding matrix is then randomly
+        generated. The encoding matrix and the converted number matrix are multiplied together to create a
+        ciphertext matrix (this matrix of numbers is what would be sent to the receiver, and the receiver
+        would need to know what the encoding matrix was in order to decrypt the ciphertext). The program
+        then computes the inverse of the encoding matrix that was randomly generated earlier. This inverse
+        matrix is the decoder matrix (the deciphering key). The decoder matrix and the cipher matrix are
+        then multiplied together to computer a matrix identical to the original number matrix. Then
+        converting the number matrix back to its ASCII characters and the original message is then output.
+        <br>
+        Video demo and source code available below.
+        <br><br>
+        Watch the demo video in full screen no see what is happening.
+    </p>
+
+    <video height="500" width="800" controls>
+        <source src="linAlgDemo.mp4" type="video/mp4">
+        Your browser does not support this video format.
+    </video>
+    <br>
+    <iframe src="linAlg.txt" height="600px" width="90%"></iframe>
+    <br>
+    <div class="centeringContainer">
+        <a download href="linAlg.txt">Download Source Code (txt file)</a>
+    </div>
+    <br>
+</body>
+</html>

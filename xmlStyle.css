@@ -1,0 +1,52 @@
+/* Used to give CSS styling to the XML Resume that has been transformed by XSLT */
+
+body {
+    color: white;
+}
+
+h1 {
+    background-color: #444444;
+    color: #CCCCCC;
+    margin: 0px;
+}
+
+h3 {
+    margin: 0px;
+    color: #DDDDDD;
+}
+
+
+.notHeader {
+    background-color: #998877;
+    margin-bottom: 5px;
+    color: #111111;
+}
+
+.left {
+    display: inline;
+}
+
+.right {
+    display: inline;
+    position: relative;
+    float: right;
+    width: 47%;
+    text-align: right;
+}
+
+.middle {
+    position: relative;
+    display: inline;
+    text-align: center;
+    float:right;
+}
+
+.columns {
+    display: inline;
+    float: left;
+    width: 15em;
+}
+
+br {
+    clear:left;
+}

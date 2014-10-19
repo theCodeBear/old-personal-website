@@ -1,0 +1,127 @@
+/* Used for styling the main web page when it is not reduced to a narrow width */
+
+body {
+    background: -webkit-linear-gradient(left top, #AAA , #FFF); /* For Safari 5.1 to 6.0 */
+    background: -o-linear-gradient(bottom right, #AAA , #FFF); /* For Opera 11.1 to 12.0 */
+    background: -moz-linear-gradient(bottom right, #AAA , #FFF); /*For Firefox 3.6 to 15 */
+    background: linear-gradient(to bottom right, #AAA , #FFF); /* Standard syntax */
+    background-repeat: no-repeat;
+    height: 60em;
+    color: black;
+    overflow: hidden;
+}
+
+#header {
+    font-size: 1.5em;
+    font-family: copperplate;
+    text-align: left;
+    position: fixed;
+    width: inherit;
+    background-color: black;
+    background-size: 100% 100%;
+    height: 4.5em;
+    color: white;
+    top: 0;
+    left: 0;
+    right: 0;
+    border-bottom: 2px solid white;
+}
+
+#background {
+    position: fixed;
+    width: 60em;
+    background-image:url('canvasEdit.png');
+    background-size: 100% 100%;
+}
+
+#todd {
+    font-size: 2em;
+    padding: 0;
+    margin: 0;
+}
+
+iframe {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#mainFrame {
+    position: fixed;
+    width: 72em;
+    height: 34em;
+    left: 8em;
+    top: 8em;
+    border: none;
+}
+
+#resumeDL {
+    display: inline;
+}
+
+#header a {
+    font-size: 0.7em;
+}
+
+
+a {
+    display: inline;
+    color: green;
+    text-decoration: none;
+}
+
+br {
+    clear: left;
+}
+
+.inline {
+    display: inline;
+}
+
+nav {
+    position: fixed;
+    top: 44em;
+    z-index: 1;
+}
+
+ul {
+    list-style-type: none;
+    margin-left: 8em;
+    margin-right: 8em;
+    margin-top:0px;
+    padding:0;
+    position: fixed;
+    width: 72em;
+}
+
+li {
+    display: inline-block;
+    float: left;
+    background-color: black;
+    padding:0;
+    width: 10em;
+    text-align: center;
+    color: white;
+    height: 1.5em;
+    font-weight: bold;
+    padding-top: 0.7em;
+    padding-bottom: 0.5em;
+}
+
+.navLeft {
+    border-right: 1px solid white;
+}
+
+.navMiddle {
+    border-left: 1px solid white;
+    border-right: 1px solid white;
+}
+
+.navRight {
+    border-left: 1px solid white;
+}
+
+li:hover {
+    color: green;
+    cursor: pointer;  cursor: hand;     /* I believe some browsers use pointer, some use hand */
+}

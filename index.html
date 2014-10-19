@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title> Todd Kronenberg's Website </title>
+    
+    <link href='http://fonts.googleapis.com/css?family=Revalia' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="personal website style.css">
+
+    <!--    These three lines forces no cache checks, otherwise updates to iframe links won't be displayed
+            if they've been cached already. So they just continue to display old versions of those pages. -->
+    <meta http-Equiv="Cache-Control" Content="no-cache">
+    <meta http-Equiv="Pragma" Content="no-cache">
+    <meta http-Equiv="Expires" Content="0">
+
+    <script>
+
+        // Handles redirecting the content of the iframe based on what navigation option is clicked
+        function navClick(option) {
+            if (option == "skills")
+                document.getElementById("mainFrame").src="TechSkills.html";
+            else if (option == "currently")
+                document.getElementById("mainFrame").src="Currently.html";
+            else if (option == "portfolio")
+                document.getElementById("mainFrame").src="Portfolio.html";
+            else if (option == "education")
+                document.getElementById("mainFrame").src="Education.html";
+            else if (option == "experience")
+                document.getElementById("mainFrame").src="Experience.html";
+            else if (option == "resume")
+                document.getElementById("mainFrame").src="resume xml file.xml";
+            else if (option == "about")
+                document.getElementById("mainFrame").src="AboutMe.html";
+        }
+
+    </script>
+</head>
+<body>
+
+    <header id="header">
+        <div id="background">
+            <div id="todd"> Todd Kronenberg </div>
+            <span style="color: red;"> toddkronenberg@gmail.com </span> <br>
+            <a href="http://www.linkedin.com/pub/todd-kronenberg/20/96/165/"> LinkedIn Profile </a>
+            &nbsp---&nbsp
+            <div id="resumeDL"><a href="Todd Kronenberg Resume.pdf" download>Download my Resume (pdf)</a></div>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li class="navLeft" onclick="navClick('portfolio');">Portfolio </li>
+            <li class="navMiddle" onclick="navClick('skills');">Technical Skills </li>
+            <li class="navMiddle" onclick="navClick('currently');">Currently I am... </li>
+            <li class="navMiddle" onclick="navClick('education');">Education </li>
+            <li class="navMiddle" onclick="navClick('experience');">Work Experience </li>
+            <li class="navMiddle" onclick="navClick('resume');">Resume </li>
+            <li class="navRight" onclick="navClick('about');">About Me </li>
+        </ul>
+    </nav>
+
+    <iframe id="mainFrame" src="Portfolio.html"></iframe>
+
+    <!-- <section id="resume"><br><br><br>
+        <header> Resume </header> <br>
+        <iframe id="resumeFrame" src="resume xml file.xml" width="75%" height="650px"></iframe>
+        <div id="resumeDL"><a href="Todd Kronenberg Resume.pdf" download>Download my Resume (pdf)</a></div>
+    </section> -->
+
+
+</body>
+</html>

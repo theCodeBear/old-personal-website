@@ -1,0 +1,226 @@
+button {
+    border-radius: 4px;
+    outline: none;
+    position: absolute;
+    top: 630px;
+    width: 100px;
+    height: 40px;
+    vertical-align: middle;
+    background-color: #BBBBBB;
+    z-index: 4;
+}
+
+.toggle:active:enabled {
+    -webkit-box-shadow: inset 0 0 5px black;
+    -moz-box-shadow: inset 0 0 5px black;
+    box-shadow: inset 0 0 10px black;
+}
+
+.create {
+    background-color: red;
+}
+
+canvas {
+    position: absolute;
+}
+
+#colorPalette {
+    left: 1150px;
+}
+
+
+/*  STANDARD BUTTONS  */
+
+
+#gridButton {
+    left: 25px;
+}
+
+#download {
+    left: 25px;
+    top: 680px;
+}
+
+#selectDrawable {
+    left: 140px;
+}
+
+#deleteDrawable {
+    left: 260px;
+}
+
+#curve {
+    left: 380px;
+    padding: 0px;       /* this stopped text from going outside button in Firefox */
+}
+
+#cubicCurve {
+    left: 500px;
+}
+
+#circle {
+    left: 620px;
+}
+
+#rect {
+    left: 740px;
+}
+
+#line {
+    left: 860px;
+}
+
+#arc {
+    left: 980px;
+}
+
+
+
+/*#undo {
+    left: 140px;
+    top: 680px;
+}*/
+
+
+/*  FIXED POINT BUTTONS  */
+
+
+.fixed {
+    top: 628px;
+    z-index: 3;
+    height: 90px;
+    width: 104px;
+}
+
+
+#fixCurve {
+    left: 378px;
+}
+
+#fixCubicCurve {
+    left: 498px;
+}
+
+#fixCircle {
+    left: 618px;
+}
+
+#fixRect {
+    left: 738px;
+}
+
+#fixLine {
+    left: 858px;
+}
+
+#fixCircle, #fixRect, #fixLine {
+    /*margin-left: 6px;*/
+}
+
+
+/*  Series Connection Buttons  */
+
+
+.series {
+    position: absolute;
+    top: 625px;
+    background-color: white;
+    height: 130px;
+    width: 112px;
+    z-index: 2;     /* needs to be higher z-index than the canvas for the hint's to show clearly" */
+}
+
+.series::-moz-focus-inner {     /* in Firefox text was going outside the buttons */
+    padding: 0;
+}
+
+
+#seriesQuadCurve {
+    left: 374px;
+}
+
+#seriesCubicCurve {
+    left: 494px;
+}
+
+#seriesRect {
+    left: 734px;
+}
+
+#seriesLine {
+    left: 854px;
+}
+
+#seriesArc {
+    left: 974px;
+}
+
+
+/*  Button Instructions on Hover  */
+
+
+.toggle:hover:after {
+    position: absolute;
+    display: block;
+    content: attr(hint);
+    top: -160px;
+    background-color: rgba(50,100,50,0.85);
+    padding: 10px;
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    color: white;
+}
+
+.fixed:hover:after {
+    top: -160px;
+}
+
+.series:hover:after {
+    top: -160px;
+}
+
+#gridButton:hover:after {
+    top: -70px;
+}
+
+#selectDrawable:hover:after {
+    top: -120px;
+}
+
+#deleteDrawable:hover:after {
+    top: -80px;
+}
+
+#download:hover:after {
+    top: -200px;
+}
+
+/*#undo:hover:after {
+    top: -120px;
+}*/
+
+#circle:hover:after {
+    top: -120px;
+}
+
+
+/* OPTIONS */
+
+
+#colorField {
+    position: absolute;
+    left: 1235px;
+    top: 200px;
+    width: 8em;
+    text-align: center;
+    border: 5px solid black;
+}
+
+#drawStyles {
+    position: absolute;
+    left: 1200px;
+    top: 250px;
+}
+
+

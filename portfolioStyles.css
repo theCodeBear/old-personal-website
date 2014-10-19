@@ -1,0 +1,42 @@
+/* Used for the styling of the Portfolio pages */
+
+header {
+    width: 100%;
+    text-align: center;
+    background-color: green;
+    font-size: 1.5em;
+    color: white;
+}
+
+p {
+    font-size: 1em;
+}
+
+iframe {
+    background-color: white;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+a {
+    position: relative;
+}
+
+video {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+h2 {
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+.centeringContainer {
+    width: 100%;
+    text-align: center;
+}

@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+
+<!-- NOTHING, EXCEPT THE GRID, DISPLAYS ON THE CANVAS IN FIREFOX -->
+
+<html>
+<head>
+    <title>Canvas Demo</title>
+    <link rel="stylesheet" type="text/css" href="demoStyles.css">
+
+
+    <script>
+
+
+
+
+/*                 Variable and Object Declarations                 */
+
+    // some variables
+        /*var controlX = 250, controlY = 250;*/
+        firstClick = 0;
+        drawings = new Array();         // holds all drawn objects
+        drawIndex = 0;
+        drawStyle = "stroke";
+
+        /*undoArray = new Array();     // holds previous Canvas states for the Undo button*/
+
+
+        curveTemp = new bezierQuadCurve(0,0,0,0,0,0,"black","stroke");
+        cubicCurveTemp = new bezierCubicCurve(0,0,0,0,0,0,0,0,"black","stroke");
+        cirTemp = new circle(0,0,0,"black","stroke");
+        rectTemp = new rectangle(0,0,0,0,"black","stroke");
+        lineTemp = new line(0,0,0,0,"black");
+        arcTemp = new arc(0,0,0,0,0,"black","stroke");
+
+    // Bezier Curve object definition
+        function bezierQuadCurve(x1, y1, x2, y2, cntlX, cntlY, color, style) {
+            this.x1 = x1;
+            this.y1 = y1;
+            this.x2 = x2;
+            this.y2 = y2;
+            this.cntlX = cntlX;
+            this.cntlY = cntlY;
+            this.color = color;
+            this.oldColor = "black";
+            this.style = style;
+            this.lineWidth = 1;
+        }
+
+    // Cubic Bezier Curve object definition
+        function bezierCubicCurve(x1, y1, x2, y2, cntl_x1, cntl_y1, cntl_x2, cntl_y2, color, style) {
+            this.x1 = x1;
+            this.y1 = y1;
+            this.x2 = x2;
+            this.y2 = y2;
+            this.cntl_x1 = cntl_x1;
+            this.cntl_y1 = cntl_y1;
+            this.cntl_x2 = cntl_x2;
+            this.cntl_y2 = cntl_y2;
+            this.color = color;
+            this.oldColor = "black";
+            this.style = style;
+            this.lineWidth = 1;
+        }
+
+    // Circle object definition
+        function circle(cX, cY, radius, color, style) {
+            this.cX = cX;
+            this.cY = cY;
+            this.radius = radius;
+            this.startAngle = 0;
+            this.endAngle = 2*Math.PI;
+            this.anticlockwise=false;   // doesn't matter which way its going, its a circle
+            this.color = color;
+            this.oldColor = "black";
+            this.style = style;
+            this.lineWidth = 1;
+        }
+
+    // Rectangle object definition
+        function rectangle(x, y, width, height, color, style) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.color = color;
+            this.oldColor = "black";
+            this.style = style;
+            this.lineWidth = 1;
+        }
+
+    // Line object definition
+        function line(x1, y1, x2, y2, color) {
+            this.x1 = x1;
+            this.y1 = y1;
+            this.x2 = x2;
+            this.y2 = y2;
+            this.color = color;
+            this.oldColor = "black";
+            this.lineWidth = 1;
+        }
+
+    // Drawn object definition
+        function drawable(type, object) {
+            this.type = type;           // string identifying the type of drawn object
+            this.object = object;       // the drawn object
+        }
+
+    // Arc object definition
+        function arc(cX, cY, radius, stAng, endAng, color, style) {
+            this.cX = cX;
+            this.cY = cY;
+            this.radius = radius;
+            this.stAng = stAng;
+            this.endAng = endAng;
+            this.ccw = true;
+            this.color = color;
+            this.style = style;
+            this.lineWidth = 1;
+            this.lastEndPointX= -10;
+            this.lastEndPointY= -10;
+        }
+
+/*                            Functions                             */
+
+///////////////////////// Initializes Canvas On HTML Body Load /////////////////////////
+
+
+    // Function called when html body is loaded
+        function onStart() {
+
+            canvas = document.getElementById("Canvas");
+            c = canvas.getContext("2d");
+
+            canvasGrid = document.getElementById("gridLayer");
+            cGrid = canvasGrid.getContext("2d");
+
+            canvasSelect = document.getElementById("selectLayer");
+            cSelect = canvasSelect.getContext("2d");
+
+            // color palette canvas
+            canvasColor = document.getElementById("colorPalette");
+            cColor = canvasColor.getContext("2d");
+
+            canvasColor.addEventListener("mousedown", colorPicker, false);
+
+            drawPalette()
+
+            reRender();
+        }
+
+
+///////////////////////// Handles Color Palette /////////////////////////
+
+
+    // Function to draw the Color Palette Canvas
+        function drawPalette() {
+            var hexColor = 0x000000;
+
+            var red = ["00","33","66","99","CC","FF"];
+            var green = ["00","33","66","99","CC","FF"];
+            var blue = ["00","33","66","99","CC","FF"];
+
+            var rCount=0, gCount=0, bCount=0;
+
+            for (var row=0; row < 12; row++) {
+                for (var col=0; col < 18; col++) {
+                    cColor.fillStyle = "#"+red[rCount]+""+green[gCount]+""+blue[bCount];
+                    cColor.fillRect(col*15, row*15, 15, 15);
+                    // hexColor += 3;
+
+                    if (bCount < blue.length-1) {
+                        bCount++;
+                    } else {
+                        bCount=0;
+                        if (gCount < green.length-1) {
+                            gCount++;
+                        } else {
+                            gCount=0;
+                            rCount++;
+                        }
+                    }
+                }
+            }
+        }
+
+
+    // Gets the color chosen in the color palette
+        function colorPicker(event) {
+            var x = event.x - canvasColor.offsetLeft;
+            var y = event.y - canvasColor.offsetTop;
+
+            var imgData = cColor.getImageData(x,y,1,1).data;
+            var r = imgData[0];
+            var g = imgData[1];
+            var b = imgData[2];
+
+            r = convertToHex(r);
+            g = convertToHex(g);
+            b = convertToHex(b);
+
+        // changes value in color textfield based on the clicked color from color palette
+            document.getElementById("colorField").value="#"+r+g+b;
+        // changes the border of the color textfield to show the color chosen in the palette
+            document.getElementById("colorField").style.borderColor="#"+r+g+b;
+        }
+
+    // Gets the two hex digits for each color and sends them to hexNumsToLetters function.
+        function convertToHex(value) {
+            value = Math.floor(value/16);
+            remainder = value%16;
+
+            value = hexNumsToLetters(value);
+            remainder = hexNumsToLetters(remainder);
+
+            return (value+""+remainder);
+        }
+
+    // Converts any hex values over 10 into appropriate hex letter value.
+        function hexNumsToLetters(value) {
+            switch (value) {
+                case 10:
+                    value = 'A';
+                    break;
+                case 11:
+                    value = 'B';
+                    break;
+                case 12:
+                    value = 'C';
+                    break;
+                case 13:
+                    value = 'D';
+                    break;
+                case 14:
+                    value = 'E';
+                    break;
+                case 15:
+                    value = 'F';
+                    break;
+            }
+            return value;
+        }
+
+
+///////////////////////// Handles Drawing Style /////////////////////////
+
+
+    // Called when a drawStyle radio button is clicked. Changes the value representing when
+    // the draw style is Fill or Stroke. The drawStyle variable is then used in each draw
+    // creation function to set the appropriate style to the currently drawn object.
+        function drawingStyle(style) {
+            drawStyle = style;
+        }
+
+
+///////////////////////// Handles Manually Edited Color Textfield /////////////////////////
+
+
+    // Handles manual changes to the color textfield.
+    // Changes color of border according to manual change in textfield value.
+    // Changes textfield background to red if an invalid value is typed.
+        function editColor(color) {
+            document.getElementById("colorField").style.borderColor=color;
+        // if an incorrect 
+            if (!(/^#[0-91-fA-F]{6}$/.test(document.getElementById("colorField").value)))
+                document.getElementById("colorField").style.backgroundColor="red";
+            else
+                document.getElementById("colorField").style.backgroundColor="white";
+        }
+
+
+///////////////////////// Renders New Frame /////////////////////////
+
+
+    // Renders a new frame
+        function reRender() {
+        // clear canvas for next frame of drawing
+            c.clearRect(0,0,canvas.width, canvas.height);
+        // redraws stuff
+            draw();
+
+        // disable or enable the edit and delete buttons based on if there are any drawings
+            if (drawings.length == 0) {
+                document.getElementById("selectDrawable").disabled=true;
+                document.getElementById("deleteDrawable").disabled=true;
+            } else {
+                document.getElementById("selectDrawable").disabled=false;
+                if(document.getElementById("selectDrawable").value != 1)
+                    document.getElementById("deleteDrawable").disabled=false;
+            }
+
+
+            /*undoArray.push(document.getElementById("Canvas").toDataURL("image/png"));*/
+
+        }
+
+
+///////////////////////// Toggles Grid In Layered Canvas /////////////////////////
+
+
+    // Toggles the grid in the layered canvas
+        function paintGrid(toggle) {
+        // drawing the coordinate grid
+            if (toggle == 1) {
+                cGrid.strokeStyle = "rgba(0,0,0,0.3)";
+                cGrid.beginPath();
+                for (var x=50; x<=1100; x+=50) {
+                    cGrid.moveTo(x,0);
+                    cGrid.lineTo(x,600);
+                }
+                for (var y=50; y<=600; y+=50) {
+                    cGrid.moveTo(0,y);
+                    cGrid.lineTo(1100,y);
+                }
+                cGrid.closePath();
+                cGrid.stroke();
+            }
+        // toggle grid off by clearing the canvas
+            else if (toggle == 0) {
+                cGrid.clearRect(0,0,canvasGrid.width, canvasGrid.height);
+            }
+        }
+
+
+///////////////////////// Handles The Editing of Drawn Objects /////////////////////////
+
+
+    // Toggles on and off the logic to select and maniupate bezier curves
+        function modifyObjects(ev) {        /* EVENT DOESN'T WORK BECAUSE THIS FUNCTION IS CALLED WITHOUT ANY ARGUMENTS AS WELL*/
+            //var eventX = ev.x;// - canvasSelect.offsetLeft - 5;
+            //var eventY = ev.y;// - canvasSelect.offsetTop - 5;
+            var drawn = drawings[drawIndex];
+
+            if (drawn.type == "bezierQuad") {
+                /*drawn.object.color="orange";
+                if (drawIndex>0 && drawings.length > 1) {
+                    drawings[drawIndex-1].object.color=drawings[drawIndex-1].object.oldColor;*/
+                    //drawings[drawIndex+1].object.color=drawings[drawIndex+1].object.oldColor;
+                /*}*/
+                /*if (drawIndex == 0 && drawings.length > 1)
+                    drawings[drawings.length-1].object.color=drawings[drawings.length-1].object.oldColor;*/
+
+            // clear selection canvas
+                cSelect.clearRect(0,0,canvasSelect.width,canvasSelect.height);
+            // draw two endpoints on selection canvas
+                cSelect.fillStyle = "red";
+                cSelect.fillRect(drawn.object.x1, drawn.object.y1,5,5);
+                cSelect.fillRect(drawn.object.x2, drawn.object.y2,5,5);
+            // draw control point
+                cSelect.fillRect(drawn.object.cntlX, drawn.object.cntlY,5,5);
+
+            // draw orange highlight over bezier curve
+                cSelect.strokeStyle="orange";
+                cSelect.beginPath();
+                cSelect.moveTo(drawn.object.x1, drawn.object.y1);
+                cSelect.quadraticCurveTo(drawn.object.cntlX, drawn.object.cntlY, drawn.object.x2, drawn.object.y2);
+                cSelect.stroke();
+                cSelect.beginPath();
+                cSelect.closePath();
+
+                //reRender();
+                
+            // if mouse was clicked on the starting point of the curve
+            /*    if (eventX >= drawn.object.x1 && eventX <= drawn.object.x1+10 && eventY >= drawn.object.y1 && eventY <= drawn.object.y1+10) {
+
+                    canvasSelect.addEventListener('mousemove', function(e) {
+                     //   drawn.object.x1 = e.offsetX-5;
+                       // drawn.object.y1 = e.offsetY-5;
+                        //reRender();
+                    }, true);
+                }*/
+                //reRender();
+                document.getElementById("deleteDrawable").disabled=true;
+            }
+        }
+
+
+//////////////// Handles Arrow Key Movement And Renders New Canvas Frame ////////////////
+
+
+    // Handles movement with arrow keys and drawing a new frame
+        document.onkeydown = function() {
+            /*if (event.keyCode == 37)    // left
+                controlX-=5;
+            if (event.keyCode == 38)    // up
+                controlY-=5;
+            if (event.keyCode == 39)    // right
+                controlX+=5;
+            if (event.keyCode == 40)    // down
+                controlY+=5;*/
+            // if drawings are editable and "n" is pressed select next drawing
+            if (event.keyCode == 78 && document.getElementById("selectDrawable").value==1) {
+                if (++drawIndex >= drawings.length)
+                    drawIndex = 0;
+                modifyObjects();
+            }
+            /*if (event.keyCode == 66 && document.getElementById("selectDrawable").value==1) {
+                if (--drawIndex < 0) {
+                    drawIndex = drawings.length-1
+                }
+                modifyObjects();
+            }*/
+
+            //reRender();
+        }
+
+
+/*                       DRAWABLE OBJECT CREATION FUNCTIONS                       */
+
+
+//////////////////// Create And Draw a User's Quadratic Bezier Curve ////////////////////
+
+
+    // Creates user-plotted Bezier curves
+        function createQuadCurve(event) {
+        // take into account the offset of the canvas in the browser and the canvas border
+            var x = event.x-canvas.offsetLeft-5;        // border size = 5px
+            var y = event.y-canvas.offsetTop-5;
+
+        // handle click events to create a new bezier curve
+            if (firstClick==0) { /*|| curvesdrawings.length==0) {    // if all deleted, start here*/
+                curveTemp.x1 = x;
+                curveTemp.y1 = y;
+                firstClick=1;
+            } else if (firstClick==1) {
+                curveTemp.x2 = x;
+                curveTemp.y2 = y;
+                firstClick=2;
+            } else if (firstClick==2) {
+                // these two lines of code handle the "Fix Curve Endpoints" button
+                if (document.getElementById("fixCurve").value==0)
+                    firstClick=0;
+                curveTemp.cntlX = x;
+                curveTemp.cntlY = y;
+                // and firstClick stays =2, and user can keep making bezier curves
+                // with the same endpoints with single clicks to create new control
+                // points... it looks cool!
+            // create new drawable object in array of all drawn objects
+                drawings.push(new drawable("bezierQuad", new bezierQuadCurve(curveTemp.x1, curveTemp.y1, curveTemp.x2, curveTemp.y2, curveTemp.cntlX, curveTemp.cntlY, document.getElementById("colorField").value, drawStyle)));
+            
+            /*// draw bezier curve
+                c.strokeStyle = curveTemp.color;
+                c.lineWidth = curveTemp.lineWidth;
+                c.beginPath();
+                c.moveTo(curveTemp.x1, curveTemp.y1);
+                c.quadraticCurveTo(curveTemp.cntlX, curveTemp.cntlY, curveTemp.x2, curveTemp.y2);
+                c.stroke();
+
+                // to stop the curve from being filled in when a new frame is rendered:
+                c.beginPath();
+                c.closePath();
+            */
+
+            // these lines handle the "Make Connecting Quadratic Curves" button
+                if(document.getElementById("seriesQuadCurve").value==1) {
+                    curveTemp.x1 = curveTemp.x2;
+                    curveTemp.y1 = curveTemp.y2;
+                    firstClick=1;
+                }
+
+                reRender();
+            }
+        }
+
+
+//////////////////// Create And Draw a User's Cubic Bezier Curve ////////////////////
+
+
+    // Creates user-plotted Bezier curves
+        function createCubicCurve(event) {
+        // take into account the offset of the canvas in the browser and the canvas border
+            var x = event.x-canvas.offsetLeft-5;        // border size = 5px
+            var y = event.y-canvas.offsetTop-5;
+
+        // handle click events to create a new bezier curve
+            if (firstClick==0) {
+                cubicCurveTemp.x1 = x;
+                cubicCurveTemp.y1 = y;
+                firstClick=1;
+            } else if (firstClick==1) {
+                cubicCurveTemp.x2 = x;
+                cubicCurveTemp.y2 = y;
+                firstClick=2;
+            } else if (firstClick==2) {
+                cubicCurveTemp.cntl_x1 = x;
+                cubicCurveTemp.cntl_y1 = y;
+                firstClick=3;
+            } else if (firstClick==3) {
+                // these two lines of code handle the "Fix Curve Endpoints" button
+                if (document.getElementById("fixCubicCurve").value==0)
+                    firstClick=0;
+                else
+                    firstClick=2;
+                cubicCurveTemp.cntl_x2 = x;
+                cubicCurveTemp.cntl_y2 = y;
+            // create new drawable object in array of all drawn objects
+                drawings.push(new drawable("bezierCubic", new bezierCubicCurve(cubicCurveTemp.x1, cubicCurveTemp.y1, cubicCurveTemp.x2, cubicCurveTemp.y2, cubicCurveTemp.cntl_x1, cubicCurveTemp.cntl_y1, cubicCurveTemp.cntl_x2, cubicCurveTemp.cntl_y2, document.getElementById("colorField").value, drawStyle)));
+            
+            /*// draw bezier curve
+                c.strokeStyle = cubicCurveTemp.color;
+                c.lineWidth = cubicCurveTemp.lineWidth;
+                c.beginPath();
+                c.moveTo(cubicCurveTemp.x1, cubicCurveTemp.y1);
+                c.bezierCurveTo(cubicCurveTemp.cntl_x1, cubicCurveTemp.cntl_y1, cubicCurveTemp.cntl_x2, cubicCurveTemp.cntl_y2, cubicCurveTemp.x2, cubicCurveTemp.y2);
+                c.stroke();
+
+                // to stop the curve from being filled in when a new frame is rendered:
+                c.beginPath();
+                c.closePath();
+            */
+
+            // these lines handle the "Make Connecting Quadratic Curves" button
+                if(document.getElementById("seriesCubicCurve").value==1) {
+                    cubicCurveTemp.x1 = cubicCurveTemp.x2;
+                    cubicCurveTemp.y1 = cubicCurveTemp.y2;
+                    firstClick=1;
+                }
+
+                reRender()
+            }
+        }
+
+
+///////////////////////// Create And Draw A User's Circle /////////////////////////
+
+
+    // Draws a user-created circle by handling clicks
+        function circleCreate(event) {
+            var x = event.x-canvas.offsetLeft-5;
+            var y = event.y-canvas.offsetTop-5;
+
+            if (firstClick==0) {
+                cirTemp.cX = x;
+                cirTemp.cY = y;
+                firstClick = 1;
+            } else if (firstClick==1) {
+                // these two lines of code handle the "Fix Circle Centerpoint" button
+                if (document.getElementById("fixCircle").value==0)
+                    firstClick=0;
+                // the next 3 lines calculate and set the radius
+                var tempX = Math.abs(x - cirTemp.cX);
+                var tempY = Math.abs(y - cirTemp.cY);
+                cirTemp.radius = Math.sqrt(tempX*tempX + tempY*tempY);
+            // add circle to drawings array
+                drawings.push(new drawable("circle", new circle(cirTemp.cX, cirTemp.cY, cirTemp.radius, document.getElementById("colorField").value, drawStyle)));
+            
+            /*// draw circle
+                // shorthand for drawings[drawings.length-1] to use below
+                var drawn = drawings[drawings.length-1];
+
+                c.strokeStyle=drawn.object.color;
+                c.lineWidth=drawn.object.lineWidth;
+                c.beginPath();
+                c.arc(drawn.object.cX, drawn.object.cY, drawn.object.radius, drawn.object.startAngle, drawn.object.endAngle, drawn.object.anticlockwise);
+                c.closePath();
+                c.stroke();
+
+                c.beginPath();
+                c.closePath();
+            */
+
+                reRender();
+            }
+        }
+
+
+///////////////////////// Create And Draw A User's Rectangle /////////////////////////
+
+
+        function rectCreate(event) {
+            var x = event.x-canvas.offsetLeft-5;
+            var y = event.y-canvas.offsetTop-5;
+
+            if (firstClick == 0) {
+                rectTemp.x = x;
+                rectTemp.y = y;
+                firstClick = 1;
+            } else if (firstClick == 1) {
+            // these two lines of code handle the "Fix Rectangle Starting Point" button
+                if (document.getElementById("fixRect").value==0)
+                    firstClick=0;
+
+                rectTemp.width = x - rectTemp.x;
+                rectTemp.height = y - rectTemp.y;
+            // create new drawable object in array of all drawn objects
+                drawings.push(new drawable("rectangle", new rectangle(rectTemp.x, rectTemp.y, rectTemp.width, rectTemp.height, document.getElementById("colorField").value, drawStyle)));
+            
+            /*// draw rectangle
+                c.strokeStyle = rectTemp.color;
+                c.lineWidth = rectTemp.lineWidth;
+                c.strokeRect(rectTemp.x, rectTemp.y, rectTemp.width, rectTemp.height);
+                c.stroke();
+            */
+
+            // these lines handle the "Make Connecting Rectangles" button
+                if (document.getElementById("seriesRect").value==1) {
+                    firstClick=1;
+                    rectTemp.x = x;
+                    rectTemp.y = y;
+                }
+                reRender();
+            }
+        }
+
+
+///////////////////////// Create And Draw A User's Line /////////////////////////
+
+
+        function lineCreate(event) {
+            var x = event.x-canvas.offsetLeft-5;
+            var y = event.y-canvas.offsetTop-5;
+
+            if (firstClick==0) {
+                lineTemp.x1 = x;
+                lineTemp.y1 = y;
+                firstClick = 1;
+            } else if (firstClick == 1) {
+                if (document.getElementById("fixLine").value==0)
+                    firstClick = 0;
+                lineTemp.x2 = x;
+                lineTemp.y2 = y;
+            // create new drawable object in array of all drawn objects
+                drawings.push(new drawable("line", new line(lineTemp.x1, lineTemp.y1, lineTemp.x2, lineTemp.y2, document.getElementById("colorField").value)));
+
+            /*// draw line
+                c.strokeStyle = lineTemp.color;
+                c.lineWidth = lineTemp.lineWidth;
+                c.beginPath();
+                c.moveTo(lineTemp.x1, lineTemp.y1);
+                c.lineTo(lineTemp.x2, lineTemp.y2);
+                c.closePath();
+                c.stroke();
+
+                c.beginPath();
+                c.closePath();
+            */
+
+            // these lines handle the "Make Connecting Lines" button
+                if (document.getElementById("seriesLine").value==1) {
+                    firstClick = 1;
+                    lineTemp.x1 = lineTemp.x2;
+                    lineTemp.y1 = lineTemp.y2;
+                }
+
+                reRender();
+            }
+        }
+
+
+///////////////////////// Create and Draw a User's Arc /////////////////////////
+
+
+        function arcCreate(event) {
+            var eX = event.x-canvas.offsetLeft-5;
+            var eY = event.y-canvas.offsetTop-5;
+
+        // Click 1
+            if (firstClick==0) {
+                firstClick = 1;
+                arcTemp.cX = eX;
+                arcTemp.cY = eY;
+                cSelect.clearRect(0,0,1100,600);
+            // if doing Connecting Series of arcs, skip the second click
+                if (document.getElementById("seriesArc").value==1 && arcTemp.stAng!=0) {
+                    firstClick = 2;
+                // calculate radius and starting point angle in radians
+                    var dx = Math.abs(arcTemp.lastEndPointX-arcTemp.cX);
+                    var dy = Math.abs(arcTemp.lastEndPointY-arcTemp.cY);
+                    var tempY = arcTemp.lastEndPointY-arcTemp.cY;
+                    arcTemp.radius = Math.sqrt(dx*dx + dy*dy);
+                    arcTemp.stAng = Math.asin(tempY/arcTemp.radius);
+                // if startpoint to left of center point, need to subtract start angle from Pi
+                    if (arcTemp.lastEndPointX < arcTemp.cX)
+                        arcTemp.stAng = Math.PI - arcTemp.stAng;
+                // skips second click
+                    firstClick = 2;
+                    
+                // Draw line from centerpoint of arc to startpoint for connected arc
+                // creation. Draw on Selection Canvas
+                    cSelect.strokeStyle = "blue";
+                    cSelect.beginPath();
+                    cSelect.moveTo(arcTemp.cX,arcTemp.cY);
+                    cSelect.lineTo(arcTemp.lastEndPointX,arcTemp.lastEndPointY);
+                    cSelect.stroke();
+                }
+        // Click 2
+            } else if (firstClick==1) {
+            // calculate radius and starting point angle in radians
+                var dx = Math.abs(eX-arcTemp.cX);
+                var dy = Math.abs(eY-arcTemp.cY);
+                var tempY = eY-arcTemp.cY;
+                arcTemp.radius = Math.sqrt(dx*dx + dy*dy);
+                arcTemp.stAng = Math.asin(tempY/arcTemp.radius);
+            // if startpoint to left of center point, need to subtract start angle from Pi
+                if (eX < arcTemp.cX)
+                    arcTemp.stAng = Math.PI - arcTemp.stAng;
+                firstClick = 2;
+
+            // Draw line from centerpoint of arc to startpoint for individual arc
+            // creation. Draw on Selection Canvas
+                cSelect.strokeStyle = "blue";
+                cSelect.beginPath();
+                cSelect.moveTo(arcTemp.cX,arcTemp.cY);
+                cSelect.lineTo(eX,eY);
+                cSelect.stroke();
+        // Click 3
+            } else if (firstClick==2) {
+            // calculate endpoint angle in radians
+                var dx = Math.abs(eX-arcTemp.cX);
+                var dy = Math.abs(eY-arcTemp.cY);
+                var tempY = eY - arcTemp.cY;
+                var radius2 = Math.sqrt(dx*dx + dy*dy);
+                arcTemp.endAng = Math.asin(tempY/radius2);
+            // if endpoint to left of center point need to subtract end angle from Pi
+                if (eX < arcTemp.cX)
+                    arcTemp.endAng = Math.PI - arcTemp.endAng;
+            // Add arc as new drawable object to drawings array
+                drawings.push(new drawable("arc", new arc(arcTemp.cX, arcTemp.cY, arcTemp.radius, arcTemp.stAng, arcTemp.endAng, /*arcTemp.ccw,*/ document.getElementById("colorField").value, drawStyle)));
+            // shorthand for drawings[drawings.length-1] to use below
+                var drawn = drawings[drawings.length-1].object;
+            /*// draw the arc
+                c.strokeStyle = drawn.color;
+                c.beginPath();
+                c.arc(drawn.cX, drawn.cY, drawn.radius, drawn.stAng, drawn.endAng, drawn.ccw);
+                c.stroke();
+                c.beginPath();
+                c.closePath();
+            */
+                firstClick = 0;
+
+            // Draw line from centerpoint of arc to endpoint, draw on Selection Canvas
+                cSelect.strokeStyle = "blue";
+                cSelect.beginPath();
+                cSelect.moveTo(arcTemp.cX,arcTemp.cY);
+                cSelect.lineTo(eX,eY);
+                cSelect.stroke();
+
+            // need arcTemp.lastEndPointX and Y to do Connecting Arcs  
+                if (document.getElementById("seriesArc").value==1) {
+                    var tempX = eX - arcTemp.cX;
+                // hold
+                    arcTemp.lastEndPointX = arcTemp.cX + arcTemp.radius*Math.cos(arcTemp.endAng);
+                    arcTemp.lastEndPointY = arcTemp.cY + arcTemp.radius*Math.sin(arcTemp.endAng);
+                } else
+                    arcTemp.stAng=0;
+
+            // Draw endpoint of last arc in Selection Canvas
+                cSelect.fillStyle="red";
+                cSelect.fillRect(arcTemp.lastEndPointX-1, arcTemp.lastEndPointY-1,3,3);
+                cSelect.fill();                
+            // Draw centerpoint of arc in Selection Canvas
+                cSelect.fillStyle="red";
+                cSelect.fillRect(drawn.cX-1,drawn.cY-1,3,3);
+                cSelect.fill();
+
+            // render canvas
+                reRender();
+            }
+        }
+
+
+///////////////////////// Redraw All User's Created Objects /////////////////////////
+
+
+    // Redraws all user-created drawable objects each time a new frame is rendered
+        function draw() {
+            var drawn;
+            for (var i = 0; i < drawings.length; i++) {
+                drawn = drawings[i].object;    // made a shorthand for use in this function
+                switch (drawings[i].type) {
+                    case "bezierQuad":
+                        c.strokeStyle = drawn.color;
+                        c.fillStyle = drawn.color;
+                        c.lineWidth = drawn.lineWidth;
+                        c.beginPath();
+                        c.moveTo(drawn.x1, drawn.y1);
+                        c.quadraticCurveTo(drawn.cntlX, drawn.cntlY, drawn.x2, drawn.y2);
+                        if (drawn.style=="stroke")
+                            c.stroke();
+                        else
+                            c.fill();
+                        c.beginPath();
+                        c.closePath();
+                        break;
+                    case "bezierCubic":
+                        c.strokeStyle = drawn.color;
+                        c.fillStyle = drawn.color;
+                        c.lineWidth = drawn.lineWidth;
+                        c.beginPath();
+                        c.moveTo(drawn.x1, drawn.y1);
+                        c.bezierCurveTo(drawn.cntl_x1, drawn.cntl_y1, drawn.cntl_x2, drawn.cntl_y2, drawn.x2, drawn.y2);
+                        if (drawn.style=="stroke")
+                            c.stroke();
+                        else
+                            c.fill();
+                        c.beginPath();
+                        c.closePath();
+                        break;
+                    case "circle":
+                        c.strokeStyle = drawn.color;
+                        c.fillStyle = drawn.color;
+                        c.beginPath();
+                        c.arc(drawn.cX, drawn.cY, drawn.radius, drawn.startAngle, drawn.endAngle, drawn.anticlockwise);
+                        c.closePath();
+                        if (drawn.style=="stroke")
+                            c.stroke();
+                        else
+                            c.fill();
+                        c.beginPath();
+                        c.closePath();
+                        break;
+                    case "rectangle":
+                        c.strokeStyle = drawn.color;
+                        c.fillStyle = drawn.color;
+                        if (drawn.style=="stroke")
+                            c.strokeRect(drawn.x, drawn.y, drawn.width, drawn.height);
+                        else
+                            c.fillRect(drawn.x, drawn.y, drawn.width, drawn.height);
+                        break;
+                    case "line":
+                        c.strokeStyle = drawn.color;
+                        c.beginPath();
+                        c.moveTo(drawn.x1, drawn.y1);
+                        c.lineTo(drawn.x2, drawn.y2);
+                        c.closePath();
+                        c.stroke();
+                        break;
+                    case "arc":
+                        c.strokeStyle = drawn.color;
+                        c.fillStyle = drawn.color;
+                        c.beginPath();
+                        c.arc(drawn.cX, drawn.cY, drawn.radius, drawn.stAng, drawn.endAng, drawn.ccw);
+                        if (drawn.style=="stroke")
+                            c.stroke();
+                        else
+                            c.fill();
+                        c.beginPath();
+                        c.closePath();
+                        break;
+                }
+            }
+        }
+
+
+/*                       BUTTON HANDLING FUNCTIONS                            */
+
+
+/////////////////////// Handles The CSS Change For Button Presses ///////////////////////
+
+
+    // Change button style to pressed style
+        function buttonPressed(theButton, bColor) {
+            theButton.style.boxShadow = "inset 0 0 10px black";
+            theButton.style.backgroundColor = bColor;
+        }
+
+    // Change button style to unpressed style
+        function buttonUnpressed(theButton, bColor) {
+            theButton.style.boxShadow = "0 0 0 black";
+            theButton.style.backgroundColor = bColor;
+        }
+
+
+/* GRID BUTTON */
+///////////////////////// Grid Button Toggle /////////////////////////
+
+
+    // Called by the "Toggle Grid" button. Toggles the 50px by 50px grid on and off.
+        function toggleGrid() {
+            var button = document.getElementById("gridButton");
+            // turn grid on
+            if (button.value == 0) {
+                buttonPressed(button, "#888888");
+                paintGrid(1);
+                button.value = 1;
+            } else if (button.value == 1) {      // turn grid off
+                buttonUnpressed(button, "#BBBBBB");
+                paintGrid(0);
+                button.value = 0;
+            }
+        }
+
+
+/* MODIFY BUTTON */
+///////////////////////// Curve Manipulation Button Toggle /////////////////////////
+
+
+    // Called by "Curve Manipualation" button. Toggles the ability to select and change
+    // the user-created bezier curves.
+        function toggleSelection() {
+            if (drawings.length > 0) {      // if there are objects to modify
+                var button = document.getElementById("selectDrawable");
+                // turn curve manipulation on
+                if (button.value == 0) {
+                    buttonPressed(button, "#888888");
+                    button.value = 1;
+                    if (document.getElementById("curve").value==1)
+                        toggleCurve();
+                    if (document.getElementById("cubicCurve").value==1)
+                        toggleCubicCurve();
+                    if (document.getElementById("circle").value==1)
+                        toggleCircle();
+                    if (document.getElementById("rect").value==1)
+                        toggleRect();
+                // turn off Create Line button
+                    if (document.getElementById("line").value==1)
+                        toggleLine();
+                // turn off Create Arc button
+                    if (document.getElementById("arc").value==1)
+                        toggleArc();
+                    document.getElementById("deleteDrawable").disabled=true;
+                    modifyObjects();
+                    canvasSelect.addEventListener("mousedown", modifyObjects, false);
+                    
+                } else if (button.value == 1) {      // turn curve manipulation off
+                    buttonUnpressed(button, "#BBBBBB");
+                    button.value = 0;
+                    //drawings[drawIndex].object.color = drawings[drawIndex].object.oldColor;
+                    //reRender();
+                    document.getElementById("deleteDrawable").disabled=false;
+                    cSelect.clearRect(0,0,canvasSelect.width,canvasSelect.height);
+                    canvasSelect.removeEventListener("mousedown", modifyObjects, false);
+                }
+            }
+        }
+
+
+/* QUAD BEZIER BUTTONS */
+///////////////////////// Quad Bezier Curve Button Toggle /////////////////////////
+
+
+    // Called by the "Draw Quadratic Curves" button. Toggles user curve creation on and
+    // off and toggles button styling from unpressed to pressed styles
+        function toggleCurve() {
+        // toggle on
+            var button = document.getElementById("curve");
+            if (button.value == 0) {
+                buttonPressed(button, "#AA0000");
+                if (document.getElementById("selectDrawable").value==1)
+                    toggleSelection();
+                if (document.getElementById("cubicCurve").value==1)
+                    toggleCubicCurve();
+                if (document.getElementById("circle").value==1)
+                    toggleCircle();
+                if (document.getElementById("rect").value==1)
+                    toggleRect();
+            // turn off Create Line button
+                if (document.getElementById("line").value==1)
+                    toggleLine();
+            // turn off Create Arc button
+                if (document.getElementById("arc").value==1)
+                    toggleArc();
+                canvasSelect.addEventListener("mousedown", createQuadCurve, false);
+                button.value = 1;
+            } else if (button.value ==1) {      // toggle off
+                buttonUnpressed(button, "red");
+                if (document.getElementById("fixCurve").value==1)
+                    toggleFixedCurve();
+                if (document.getElementById("seriesQuadCurve").value==1)
+                    toggleSeriesQuadCurve();
+                canvasSelect.removeEventListener("mousedown", createQuadCurve, false);
+                button.value = 0;
+                firstClick=0;
+            }
+        }
+
+
+/////////////////////// Quad Curve Fixed Endpoints Button Toggle ///////////////////////
+
+
+    // Called by the "Fix Curve Endpoints" button. Handles the CSS for the button pressed.
+        function toggleFixedCurve() {
+            var button = document.getElementById("fixCurve");
+            // turn fixed endpoints on
+            if (button.value == 0) {
+                buttonPressed(button, "#888888");
+                if (document.getElementById("curve").value==0)
+                    toggleCurve();
+                if (document.getElementById("seriesQuadCurve").value==1)
+                    toggleSeriesQuadCurve();
+                button.value = 1;
+            } else if (button.value == 1) {      // turn fixed endpoints off
+                buttonUnpressed(button, "#BBBBBB");
+                firstClick=0;
+                button.value = 0;
+            }
+        }
+
+
+/////////////////////// Quad Curve Connecting Series Button Toggle ///////////////////////
+
+
+    // Called by the "Make Connecting Quadratic Curves" button. Handles the CSS for the button pressed.
+        function toggleSeriesQuadCurve() {
+            var button = document.getElementById("seriesQuadCurve");
+            // turn series on
+            if (button.value == 0) {
+                buttonPressed(button, "#88CC88");
+                if (document.getElementById("curve").value==0)
+                    toggleCurve();
+                if (document.getElementById("fixCurve").value==1)
+                    toggleFixedCurve();
+                button.value = 1;
+            } else if (button.value == 1) {      // turn series off
+                buttonUnpressed(button, "white");
+                firstClick=0;
+                button.value = 0;
+            }
+        }
+
+
+/* CUBIC BEZIER BUTTONS */
+///////////////////////// Cubic Bezier Curve Button Toggle /////////////////////////
+
+
+    // Called by the "Draw Cubic Curves" button. Toggles user curve creation on and off
+    // and toggles button styling from unpressed to pressed styles
+        function toggleCubicCurve() {
+        // toggle on
+            var button = document.getElementById("cubicCurve");
+            if (button.value == 0) {
+                buttonPressed(button, "#AA0000");
+                if (document.getElementById("selectDrawable").value==1)
+                    toggleSelection();
+                if (document.getElementById("curve").value=1)
+                    toggleCurve();
+                if (document.getElementById("circle").value==1)
+                    toggleCircle();
+                if (document.getElementById("rect").value==1)
+                    toggleRect();
+            // turn off Create Line button
+                if (document.getElementById("line").value==1)
+                    toggleLine();
+            // turn off Create Arc button
+                if (document.getElementById("arc").value==1)
+                    toggleArc();
+                canvasSelect.addEventListener("mousedown", createCubicCurve, false);
+                button.value = 1;
+            } else if (button.value ==1) {      // toggle off
+                buttonUnpressed(button, "red");
+                if (document.getElementById("fixCubicCurve").value==1)
+                    toggleFixedCubicCurve();
+                if (document.getElementById("seriesCubicCurve").value==1)
+                    toggleSeriesCubicCurve();
+                canvasSelect.removeEventListener("mousedown", createCubicCurve, false);
+                button.value = 0;
+                firstClick=0;
+            }
+        }
+
+
+/////////////////////// Cubic Curve Fixed Endpoints Button Toggle ///////////////////////
+
+
+    // Called by the "Fix Curve Endpoints" button. Handles the CSS for the button pressed.
+        function toggleFixedCubicCurve() {
+            var button = document.getElementById("fixCubicCurve");
+            // turn fixed endpoints on
+            if (button.value == 0) {
+                buttonPressed(button, "#888888");
+                if (document.getElementById("cubicCurve").value==0)
+                    toggleCubicCurve();
+                if (document.getElementById("seriesCubicCurve").value==1)
+                    toggleSeriesCubicCurve();
+                button.value = 1;
+            } else if (button.value == 1) {      // turn fixed endpoints off
+                buttonUnpressed(button, "#BBBBBB");
+                firstClick=0;
+                button.value = 0;
+            }
+        }
+
+
+///////////////////// Cubic Curve Connecting Series Button Toggle /////////////////////
+
+
+    // Called by the "Make Connecting Cubic Curves" button. Handles the CSS for the button pressed.
+        function toggleSeriesCubicCurve() {
+            var button = document.getElementById("seriesCubicCurve");
+            // turn series on
+            if (button.value == 0) {
+                buttonPressed(button, "#88CC88");
+                if (document.getElementById("cubicCurve").value==0)
+                    toggleCubicCurve();
+                if (document.getElementById("fixCubicCurve").value==1)
+                    toggleFixedCubicCurve();
+                button.value = 1;
+            } else if (button.value == 1) {      // turn series off
+                buttonUnpressed(button, "white");
+                firstClick=0;
+                button.value = 0;
+            }
+        }
+
+
+/* CIRCLE BUTTONS */
+///////////////////////// Circle Creation Button Toggle /////////////////////////
+
+
+    // Called by the "Create a Circle" button. Toggles user circle creation on and off.
+        function toggleCircle() {
+        // toggle on
+            var button = document.getElementById("circle");
+            if (button.value == 0) {
+                buttonPressed(button, "#AA0000");
+                if (document.getElementById("selectDrawable").value==1)
+                    toggleSelection();
+                if (document.getElementById("curve").value==1)
+                    toggleCurve();
+                if (document.getElementById("cubicCurve").value==1)
+                    toggleCubicCurve();
+                if (document.getElementById("rect").value==1)
+                    toggleRect();
+            // turn off Create Line button
+                if (document.getElementById("line").value==1)
+                    toggleLine();
+            // turn off Create Arc button
+                if (document.getElementById("arc").value==1)
+                    toggleArc();
+
+                button.value = 1;
+                canvasSelect.addEventListener("mousedown", circleCreate, false);
+            } else if (button.value ==1) {      // toggle off
+                buttonUnpressed(button, "red");
+                canvasSelect.removeEventListener("mousedown", circleCreate, false);
+                if (document.getElementById("fixCircle").value==1)
+                    toggleFixedCircle();
+                button.value = 0;
+                firstClick = 0;
+            }
+        }
+
+
+///////////////////////// Circle Fixed Centerpoint Button Toggle /////////////////////////
+
+
+    // Called by the "Fix Circle Centerpoint" button. Handles the CSS for the button pressed.
+        function toggleFixedCircle() {
+            var button = document.getElementById("fixCircle");
+            // turn fixed centerpoint on
+            if (button.value == 0) {
+                buttonPressed(button, "#888888");
+                if (document.getElementById("circle").value==0)
+                    toggleCircle();
+                button.value = 1;
+            } else if (button.value == 1) {      // turn fixed centerpoint off
+                buttonUnpressed(button, "#BBBBBB");
+                firstClick=0;
+                button.value = 0;
+            }
+        }
+
+
+/* RECTANGLE BUTTONS */
+///////////////////////// Rectangle Creation Button Toggle /////////////////////////
+
+
+        function toggleRect() {
+        // toggle on
+            var button = document.getElementById("rect");
+            if (button.value == 0) {
+                buttonPressed(button, "#AA0000");
+
+            // turn off Modify Drawings button
+                if (document.getElementById("selectDrawable").value==1)
+                    toggleSelection();
+            // turn off Create Curve button
+                if (document.getElementById("curve").value==1)
+                    toggleCurve();
+            // turn off Create Cubic Curve button
+                if (document.getElementById("cubicCurve").value==1)
+                    toggleCubicCurve();
+            // turn off Create Circle button
+                if (document.getElementById("circle").value==1)
+                    toggleCircle();
+            // turn off Create Line button
+                if (document.getElementById("line").value==1)
+                    toggleLine();
+            // turn off Create Arc button
+                if (document.getElementById("arc").value==1)
+                    toggleArc();
+
+                button.value=1;
+                canvasSelect.addEventListener("mousedown", rectCreate, false);
+            } else if (button.value == 1) {
+                buttonUnpressed(button, "red");
+                if(document.getElementById("fixRect").value==1)
+                    toggleFixedRect();
+                if(document.getElementById("seriesRect").value==1)
+                    toggleSeriesRect();
+                canvasSelect.removeEventListener("mousedown", rectCreate, false);
+                button.value=0;
+                firstClick=0;
+            }
+        }
+
+
+///////////////////////// Rectangle Fixed Point Button Toggle /////////////////////////
+
+
+    // Called by the "Fix Rectangle Start Point" button. Handles the CSS for the button pressed.
+        function toggleFixedRect() {
+            var button = document.getElementById("fixRect");
+            // turn fixed point on
+            if (button.value == 0) {
+                buttonPressed(button, "#888888");
+                if (document.getElementById("rect").value==0)
+                    toggleRect();
+                if (document.getElementById("seriesRect").value==1)
+                    toggleSeriesRect();
+                button.value = 1;
+            } else if (button.value == 1) {      // turn fixed point off
+                buttonUnpressed(button, "#BBBBBB");
+                firstClick=0;
+                button.value = 0;
+            }
+        }
+
+
+////////////////////// Rectangle Connecting Series Button Toggle //////////////////////
+
+
+    // Called by the "Make Connecting Rectangles" button. Handles the CSS for the button pressed.
+        function toggleSeriesRect() {
+            var button = document.getElementById("seriesRect");
+            // turn series on
+            if (button.value == 0) {
+                buttonPressed(button, "#88CC88");
+                if (document.getElementById("rect").value==0)
+                    toggleRect();
+                if (document.getElementById("fixRect").value==1)
+                    toggleFixedRect();
+                button.value = 1;
+            } else if (button.value == 1) {      // turn series off
+                buttonUnpressed(button, "white");
+                firstClick=0;
+                button.value = 0;
+            }
+        }
+
+
+/* LINE BUTTONS */
+///////////////////////// Line Creation Button Toggle /////////////////////////
+
+
+        function toggleLine() {
+        // toggle on
+            var button = document.getElementById("line");
+            if (button.value == 0) {
+                buttonPressed(button, "#AA0000");
+
+            // turn off Modify Drawings button
+                if (document.getElementById("selectDrawable").value==1)
+                    toggleSelection();
+            // turn off Create Curve button
+                if (document.getElementById("curve").value==1)
+                    toggleCurve();
+            // turn off Create Cubic Curve button
+                if (document.getElementById("cubicCurve").value==1)
+                    toggleCubicCurve();
+            // turn off Create Circle button
+                if (document.getElementById("circle").value==1)
+                    toggleCircle();
+            // turn off Create Rect button
+                if (document.getElementById("rect").value==1)
+                    toggleRect();
+            // turn off Create Arc button
+                if (document.getElementById("arc").value==1)
+                    toggleArc();
+            // disable Draw Style radio buttons and check the stroke radio button
+                document.getElementById("stroke").checked = true;
+                document.getElementById("fill").disabled = true;
+                drawStyle = "stroke";
+
+                button.value=1;
+                canvasSelect.addEventListener("mousedown", lineCreate, false);
+
+            } else if (button.value == 1) {         // toggle off
+                buttonUnpressed(button, "red");
+                if(document.getElementById("fixLine").value==1)
+                    toggleFixedLine();
+                if(document.getElementById("seriesLine").value==1)
+                    toggleSeriesLine();
+                document.getElementById("fill").disabled = false;
+                canvasSelect.removeEventListener("mousedown", lineCreate, false);
+                button.value=0;
+                firstClick=0;
+            }
+        }
+
+
+/////////////////////// Line Fixed Starting Point Button Toggle ///////////////////////
+
+
+    // Called by the "Fix Line Start Point" button. Handles the CSS for the button pressed.
+        function toggleFixedLine() {
+            var button = document.getElementById("fixLine");
+            // turn fixed point on
+            if (button.value == 0) {
+                buttonPressed(button, "#888888");
+                if (document.getElementById("line").value==0)
+                    toggleLine();
+                if (document.getElementById("seriesLine").value==1)
+                    toggleSeriesLine();
+                button.value = 1;
+            } else if (button.value == 1) {      // turn fixed point off
+                buttonUnpressed(button, "#BBBBBB");
+                firstClick=0;
+                button.value = 0;
+            }
+        }
+
+
+///////////////////////// Line Connecting Series Button Toggle /////////////////////////
+
+
+    // Called by the "Make Connecting Lines" button. Handles the CSS for the button pressed.
+        function toggleSeriesLine() {
+            var button = document.getElementById("seriesLine");
+            // turn series on
+            if (button.value == 0) {
+                buttonPressed(button, "#88CC88");
+                if (document.getElementById("line").value==0)
+                    toggleLine();
+                if (document.getElementById("fixLine").value==1)
+                    toggleFixedLine();
+                button.value = 1;
+            } else if (button.value == 1) {      // turn series off
+                buttonUnpressed(button, "white");
+                firstClick=0;
+                button.value = 0;
+            }
+        }
+
+
+/*  ARC BUTTONS  */
+///////////////////////// Arc Creation Button Toggle /////////////////////////
+
+
+        function toggleArc() {
+        // toggle on
+            var button = document.getElementById("arc");
+            if (button.value == 0) {
+                buttonPressed(button, "#AA0000");
+
+            // turn off Modify Drawings button
+                if (document.getElementById("selectDrawable").value==1)
+                    toggleSelection();
+            // turn off Create Curve button
+                if (document.getElementById("curve").value==1)
+                    toggleCurve();
+            // turn off Create Cubic Curve button
+                if (document.getElementById("cubicCurve").value==1)
+                    toggleCubicCurve();
+            // turn off Create Circle button
+                if (document.getElementById("circle").value==1)
+                    toggleCircle();
+            // turn off Create Rect button
+                if (document.getElementById("rect").value==1)
+                    toggleRect();
+            // turn off Create Line button
+                if (document.getElementById("line").value==1)
+                    toggleLine();
+                button.value=1;
+                canvasSelect.addEventListener("mousedown", arcCreate, false);
+
+            } else if (button.value == 1) {         // toggle off
+                buttonUnpressed(button, "red");
+                canvasSelect.removeEventListener("mousedown", arcCreate, false);
+                if(document.getElementById("seriesArc").value==1)
+                    toggleSeriesArc();
+            // Erase helper points and lines by erasing selection canvas
+                cSelect.clearRect(0,0,1100,600);
+                button.value=0;
+                firstClick=0;
+            }
+        }
+
+
+///////////////////////// Arc Connecting Series Button Toggle /////////////////////////
+
+
+        function toggleSeriesArc() {
+            var button = document.getElementById("seriesArc");
+            // turn series on
+            if (button.value == 0) {
+                buttonPressed(button, "#88CC88");
+                if (document.getElementById("arc").value==0)
+                    toggleArc();
+                button.value = 1;
+            } else if (button.value == 1) {      // turn series off
+                buttonUnpressed(button, "white");
+                firstClick=0;
+                button.value = 0;
+                arcTemp.stAng=0;
+            }
+        }
+
+
+/* DELETE BUTTON */
+///////////////////////// Deletes Last User-Created Drawing /////////////////////////
+
+
+    // Removes last drawable object created by the user
+        function deleteLast() {
+            /*var button = document.getElementById("deleteDrawable");*/
+            if (drawings.length > 0) {      // if there are any drawable objects to delete
+                drawings.pop();
+                reRender();
+            }
+        }
+
+/*  DOWNLOAD CANVAS BUTTON  */
+////////////////////// Downloads the Canvas to the Local Computer //////////////////////
+
+
+        function downloadCanvas() {
+            var image = canvas.toDataURL("image/png");//.replace("image/png", "image/octet-stream");
+            window.open(image);
+        }
+
+
+/*  UNDO BUTTON  */
+///////////////////////// Undo Button /////////////////////////
+
+
+        /*function undoLast() {
+            var undoImg = new Image();
+            undoImg.addEventListener("load", function() {
+                //c = document.getElementById("Canvas").getContext("2d");
+                c.drawImage(undoImg,0,0);
+            }, false);
+            undoImg.src = undoArray.pop();
+        }*/
+
+
+
+
+
+
+///////////////////////// x /////////////////////////
+
+
+    </script>
+
+</head>
+<body onload="onStart();">
+
+    <!-- MAIN CANVAS -->
+    <canvas id="Canvas" width="1100" height="600" style="border: 5px solid black;"></canvas>
+    <!-- GRID CANVAS -->
+    <canvas id="gridLayer" width="1100" height="600" style="border: 5px solid black;"></canvas>
+    <!-- SELECTION CANVAS -->
+    <canvas id="selectLayer" width="1100" height="600" style="border: 5px solid black;"></canvas>
+    <!-- COLOR PALETTE CANVAS -->
+    <canvas id="colorPalette" width="270" height="180" style="border: 2px solid black;"></canvas>
+    
+
+    <!-- BUTTONS -->
+    <button class="toggle" id="gridButton" type="button" onclick="toggleGrid();" value="0" hint="Background Grid">Toggle Grid</button>
+    
+    <button class="toggle" id="selectDrawable" type="button" onclick="toggleSelection();" value="0" hint="NOT FULLY FUNCTIONAL. Press 'n' to advance through Quad Curves">Modify Drawings</button>
+
+    <button class="toggle" id="deleteDrawable" type="button" onclick="deleteLast();" hint="Click to delete last drawn object">Delete Last Object</button>
+
+    <button class="toggle" id="download" type="button" onclick="downloadCanvas();" hint="Opens up new Window, in new Window right click and choose 'Save Image As'">Download Canvas Image</button>
+
+    <!--<button class="toggle" id="undo" type="button" onclick="undoLast();" hint="Only undo's last drawing">Undo</button>-->
+
+
+    <!-- Create Buttons -->
+
+    <button class="toggle create" id="curve" type="button" onclick="toggleCurve();" value="0" hint="Click 3 times in canvas: twice for endpoints, once for control point that determines the curve">Draw Quadratic Curves</button>
+
+    <button class="toggle create" id="cubicCurve" type="button" onclick="toggleCubicCurve();" value="0" hint="Click 4 times in canvas: twice for endpoints, twice for control points that determine curve">Draw Cubic Curves</button>
+
+    <button class="toggle create" id="circle" type="button" onclick="toggleCircle();" value="0" hint="Click once in canvas to set center of circle, click again to set radius">Draw Circles</button>
+
+    <button class="toggle create" id="rect" type="button" onclick="toggleRect();" value="0" hint="Click once in canvas to create corner, click again to create opposite corner">Draw Rectangles</button>
+
+    <button class="toggle create" id="line" type="button" onclick="toggleLine();" value="0" hint="Click once in canvas to create start point, click again to create endpoint">Draw Lines</button>
+
+    <button class="toggle create" id="arc" type="button" onclick="toggleArc();" value="0" hint="Click thrice in canvas to set centerpoint, starting point, and endpoint of arc">Draw an Arc</button>
+
+
+    <!-- "Fixed Point" Buttons -->
+
+    <button class="toggle fixed" id="fixCurve" type="button" onclick="toggleFixedCurve();" value="0" hint="Click twice in canvas to create fixed endpoints, every click after creates a new control point (a new curve)"><br><br>Fix Curve Endpoints</button>
+
+    <button class="toggle fixed" id="fixCubicCurve" type="button" onclick="toggleFixedCubicCurve();" value="0" hint="Click twice in canvas to create fixed endpoints, every two clicks after creates a new pair of control points and a curve"><br><br>Fix Curve Endpoints</button>
+
+    <button class="toggle fixed" id="fixCircle" type="button" onclick="toggleFixedCircle();" value="0" hint="Click in canvas to make a fixed center of circle, every click after makes new radius and circle"><br><br>Fix Circle Centerpoint</button>
+
+    <button class="toggle fixed" id="fixRect" type="button" onclick="toggleFixedRect();" value="0" hint="Click in canvas to make one corner, every click after creates a new rectangle from the original corner"><br><br>Fix Rectangle Start Point</button>
+
+    <button class="toggle fixed" id="fixLine" type="button" onclick="toggleFixedLine();" value="0" hint="Click once in canvas to make line start point, every click after makes a new line from original start point"><br><br>Fix Line Start Point</button>
+
+
+    <!-- "Series Connection" Buttons -->
+
+    <button class="toggle series" id="seriesQuadCurve" type="button" onclick="toggleSeriesQuadCurve();" value="0" hint="Click thrice in canvas to make a curve, every two clicks after makes a new connected curve"><br><br><br><br><br><br><br>Make Connecting Quadratic Curves</button>
+
+    <button class="toggle series" id="seriesCubicCurve" type="button" onclick="toggleSeriesCubicCurve();" value="0" hint="Click 4 times in canvas to make a curve, every 3 clicks after makes a new connected curve"><br><br><br><br><br><br><br>Make Connecting Cubic Curves</button>
+
+    <button class="toggle series" id="seriesRect" type="button" onclick="toggleSeriesRect();" value="0" hint="Click twice in canvas to make a rectnagle, every click after makes a new rectangle from where the last one stopped"><br><br><br><br><br><br><br>Make Connecting Rectangles</button>
+
+    <button class="toggle series" id="seriesLine" type="button" onclick="toggleSeriesLine();" value="0" hint="Click twice in canvas to make a line, every click after makes a new connected line"><br><br><br><br><br><br><br>Make Connecting Lines</button>
+
+    <button class="toggle series" id="seriesArc" type="button" onclick="toggleSeriesArc();" value="0" hint="Click thrice in canvas to make an arc, every two clicks after sets center and endpoint of a connected arc"><br><br><br><br><br><br><br>Make Connecting Arcs</button>
+
+
+    <!-- Options Input Fields -->
+
+    <input type="text" id="colorField" value="#000000" onchange="editColor(this.value);">
+
+    <div id="drawStyles">
+        Draw Style:<br>
+        <input type="radio" id="fill" name="drawStyle" value="fill" onclick="drawingStyle(this.value);"> Fill <br>
+        <input type="radio" id="stroke" name="drawStyle" value="stroke" onclick="drawingStyle(this.value);" checked> Outline
+    </div>
+    
+
+</body>
+</html>

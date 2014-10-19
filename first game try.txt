@@ -1,0 +1,789 @@
+#!/usr/bin/python
+
+import pygame, sys, time, math, random
+import pixelDraw
+import fgEnemy
+
+
+WIN_WIDTH = 800
+WIN_HEIGHT = 600
+random.seed()
+
+#################### MAIN PROGRAM FUNCTION ####################
+
+def main():
+    pygame.init()
+
+    global walls 
+    global user
+    walls = []
+    
+    global platforms
+    platforms = []
+    
+    # set up the window
+    size = WIN_WIDTH, WIN_HEIGHT
+    SURFACE = pygame.display.set_mode(size)#,pygame.FULLSCREEN)
+    pygame.display.set_caption("My first Pygame Game")
+
+    bg = pygame.Surface((32,32))
+    bg.convert()
+    bg.fill(pygame.Color(0,0,0))
+
+    user = Player()
+
+    global entities
+    entities = pygame.sprite.Group()
+    clock = pygame.time.Clock()
+
+    level = level1()
+
+    # parse the level string above
+    x = y = 0
+    for row in level:
+        for col in row:
+            if col == "W" or col == "P":
+                entities.add(Wall((x,y)))
+            if col == "P":
+                entities.add(Platform((x,y)))
+            x += 16     # 16 is number of pixels of each block
+        y += 16
+        x = 0
+
+    total_levelWidth = len(level[-1])*16
+    total_levelHeight = (len(level)-1)*16
+    camera = Camera(complexCamera, total_levelWidth, total_levelHeight)
+    entities.add(user)
+
+    lasers = []         # array to hold player's lasers
+    laserRects = []
+    lastShot = time.time()         # for controlling rapid fire of player's laser
+    lastTick = time.time()
+
+    global badguys
+    badguys =[]
+    enemy = Enemies('normal',500,100)
+    entities.add(enemy)
+    badguys.append(enemy)
+    global animates
+    animates = []
+    animates.append(enemy)
+    animates.append(user)
+    del enemy
+    
+    enemy1 = Enemies('flying',600,500)
+    entities.add(enemy1)
+    badguys.append(enemy1)
+    animates.append(enemy1)
+    del enemy1
+
+    checkTime = time.time()     # checks to see if it is time for an enemy to appear
+    vortex = False      # is vortex opening for an enemy to appear
+
+    # for use in making the vortex when an enemy appears:
+    widthV = 1
+    heightV = 1
+    #global vortrectx
+    vortrectx = 0
+
+    #################### MAIN GAME LOOP ####################
+    while True:
+        clock.tick(60)
+        tick = time.time()
+        for thing in animates:
+            thing = gravity(tick - lastTick, thing)
+        #user = gravity(tick - lastTick, user)
+        lastTick = tick
+        
+        camera.update(user)
+
+        
+        # get a key press:
+
+        key = pygame.key.get_pressed()
+        if key[pygame.K_RIGHT]:
+            user.move(2,0)    # / airDivide, 0)
+        if key[pygame.K_LEFT]:
+            user.move(-2,0)   # / airDivide, 0)
+        if key[pygame.K_d]:
+            thisShot = time.time()
+            if thisShot - lastShot > .3:
+                lastShot = thisShot
+                pewpew = Laser('right')
+                lasers.append(pewpew)
+                entities.add(pewpew)
+        if key[pygame.K_a]:
+            thisShot = time.time()
+            if thisShot - lastShot > .3:
+                lastShot = thisShot
+                pewpew = Laser('left')
+                lasers.append(pewpew)
+                entities.add(pewpew)
+        if key[pygame.K_s]:
+            thisShot = time.time()
+            if thisShot - lastShot > .3:
+                lastShot = thisShot
+                pewpew = Laser('down')
+                lasers.append(pewpew)
+                entities.add(pewpew)
+        if key[pygame.K_w]:
+            #lasers = rapidFire('up', lastShot, lasers)
+            thisShot = time.time()
+            if thisShot - lastShot > .3:
+                lastShot = thisShot
+                pewpew = Laser('up')
+                lasers.append(pewpew)
+                entities.add(pewpew)
+        if key[pygame.K_ESCAPE]:
+            pygame.event.post(QUIT)     # this line isn't quite right, but works
+            
+        # check lasers for wall collisions and enemy hits, and move lasers
+        for blast in lasers:
+            laserDied = False
+            for wall in walls:
+                if wall.rect.collidepoint(blast.xEnd, blast.yEnd):
+                    lasers.remove(blast)
+                    laserdied = True
+            if laserDied == False:
+                for baddie in badguys:
+                    if baddie.rect.collidepoint(blast.xEnd, blast.yEnd):
+                        baddie.death()
+                        lasers.remove(blast)
+            blast.move()
+            
+        # BADGUYS PLAYER-CHASING-AI
+        for baddie in badguys:
+
+            if baddie.type == "lineOfSight":
+                pass
+
+
+            if baddie.type == 'flying':         ## flying enemy AI
+
+                # deciding if enemy is stuck
+                ##moveTemp = baddie.prevMoves[0]
+                ##stuck = 0
+                ##for i in range(1,10):
+                    ##if baddie.prevMoves[i] != moveTemp:
+                        ##stuck += 1
+                ##if stuck == 9:
+                    ##baddie.wrong = 1
+
+                # if user above enemy
+                if user.rect.y < baddie.rect.y:
+                    baddie.badJump()
+                    # if platform directly above enemy
+                    if level[baddie.row-1][baddie.col] == "P" or \
+                       level[baddie.row-1][baddie.col-1] == "P" or \
+                       level[baddie.row-1][baddie.col+1] == "P":
+                        l = 0
+                        r = 0
+                        while level[baddie.row-1][baddie.col-l] == "P":
+                            l += 1
+                        while level[baddie.row-1][baddie.col+r] == "P":
+                            r += 1
+                        #print 'r: %d, l: %d' % (r, l)
+                        if l <= r:
+                            baddie.move(-1,0) ##if baddie.wrong == 0 else baddie.move(1,0)
+                        else:
+                            baddie.move(1,0) ##if baddie.wrong == 0 else baddie.move(-1,0)
+                    # if user left of enemy
+                    elif user.rect.x < baddie.rect.x:
+                        baddie.move(-1,0)
+                    elif user.rect.x > baddie.rect.x:
+                        baddie.move(1,0)
+                # if user below enemy
+                elif user.rect.y > baddie.rect.y:
+                    # if platform directly below enemy
+                    if level[baddie.row+1][baddie.col] == "P" or \
+                       level[baddie.row+1][baddie.col-1] == "P" or \
+                       level[baddie.row+1][baddie.col+1] == "P":
+                        l = 0
+                        r = 0
+                        while level[baddie.row+1][baddie.col-l] == "P":
+                            l += 1
+                        while level[baddie.row+1][baddie.col+r] == "P":
+                            r += 1
+                        #print 'r: %d, l: %d' % (r, l)
+                        if l <= r:
+                            baddie.move(-1,0) ##if baddie.wrong == 0 else baddie.move(1,0)
+                        else:
+                            baddie.move(1,0) ##if baddie.wrong == 0 else baddie.move(-1,0)
+                    # if user left of enemy
+                    elif user.rect.x < baddie.rect.x:
+                        baddie.move(-1,0)
+                    elif user.rect.x > baddie.rect.x:
+                        baddie.move(1,0)
+                # if user left of enemy
+                elif user.rect.x < baddie.rect.x:
+                    baddie.move(-1,0)
+                # if user right of enemy
+                elif user.rect.x > baddie.rect.x:
+                    baddie.move(1,0)
+
+
+                '''if user.rect.y < baddie.rect.y:
+                    baddie.badJump()
+                if user.rect.y < baddie.rect.y and level[baddie.row-1][baddie.col] == "P":     # if user above enemy
+                    baddie.move(-1,0)
+                if user.rect.x < baddie.rect.x:     # if user it to left of enemy
+                    for i in range(user.col,baddie.col):  # check spaces between user and enemy
+                        if level[baddie.row][i] == 'W' or level[baddie.row][i] == 'P':
+                            baddie.badJump()
+                            break
+                        else:
+                            baddie.move(-1,0)
+                            break
+                if user.rect.x > baddie.rect.x:     # if user it to right of enemy
+                    for i in range(baddie.col, user.col):  # check spaces between user and enemy
+                        if level[baddie.row][i] == 'W' or level[baddie.row][i] == 'P':
+                            baddie.badJump()
+                            break
+                        else:
+                            baddie.move(1,0)
+                            break#
+                    #for i in range(baddie.col, user.col):
+                        if level[baddie.row-1][i] == "P":
+                            baddie.move(-1,0)
+                            baddie.badJump()
+                            break#
+                    #for i in range(user.row, baddie.row):  # check spaces between user and enemy
+                        if level[i][baddie.col] == 'W' or level[i][baddie.col] == 'P':
+                            baddie.move(1,0)
+                            #break
+                        else:
+                            baddie.badJump()
+                            #break'''
+
+                '''if user.rect.x < baddie.rect.x:
+                    baddie.move(-1, 0)
+                elif user.rect.x > baddie.rect.x:
+                    baddie.move(1, 0)
+                if user.rect.y < baddie.rect.y:
+                    baddie.badJump()'''
+
+
+                '''if baddie.onGround == True:
+                    for platform in platforms:
+                        if baddie.rect.top == platform.rect.bottom or baddie.rect.bottom == platform.rect.top:
+                            baddie.move(-1,0)'''
+                    
+            ## normal enemy AI
+            if baddie.type == "normal":
+                if user.rect.y < baddie.rect.y:     # if user above enemy
+                    baddie.move(baddie.findUser(),0)
+                    #pass
+                # if user below enemy
+                elif user.rect.x < baddie.rect.x:   # if user on vertical level and to the left of enemy
+                    baddie.move(-1, 0)
+                elif user.rect.x > baddie.rect.x:   # if user on vertical level and to the right of enemy
+                    baddie.move(1, 0)
+
+
+            ## makes enemies move up over an obstacle that is blocking them horizontally aligned with user
+            if math.fabs(user.rect.top - baddie.rect.top) < 16:
+                for wall in walls:
+                    if baddie.type == "normal":
+                        if level[baddie.row][baddie.col+1] == "P" or level[baddie.row][baddie.col-1] == "P" and \
+                        (math.fabs(baddie.rect.top - wall.rect.top) < 16):
+                            baddie.badJump()
+                    elif baddie.type == "flying":
+                        if baddie.rect.left == wall.rect.right or baddie.rect.right == wall.rect.left and \
+                        (math.fabs(baddie.rect.top - wall.rect.top) < 16):
+                            baddie.badJump()
+
+            # record enemy's current position on map
+            ##baddie.prevMoves.pop(0)
+            ##baddie.prevMoves.append([math.fabs(baddie.rect.x / 16), math.fabs(baddie.rect.y / 16)])
+
+            # Player dies if an enemy runs into him:
+            if baddie.rect.colliderect(user.rect):
+                user.death()
+
+        # check for a QUIT game event
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.exit()
+                sys.exit()
+                
+        #SURFACE.fill((0,0,0))
+        # draw background
+        for y in range(32):
+            for x in range(32):
+                SURFACE.blit(bg, (x * 32, y * 32))
+
+        
+        # Every 5 seconds add a flying enemy
+        xV = 1
+        yV = 1
+        if time.time() - checkTime > 5:
+            vortex = True
+            checkTime = time.time()
+            xV = random.randint(1, len(level[-1])-1)
+            yV = random.randint(1, len(level)-2)
+            while badEntry(level, xV, yV):
+                xV = random.randint(1, len(level[-1])-1)
+                yV = random.randint(1, len(level)-2)
+            xVpix = xV * 16
+            yVpix = yV * 16
+        if vortex == True:
+            vortrectx = AnObject((255,255,0), xVpix - widthV/2, yVpix - heightV/2, widthV, heightV)  # surf, color, (x,y,width,height)
+            entities.add(vortrectx)
+            widthV += 1
+            heightV += 1
+        if vortex == True and time.time() - checkTime > .5:
+            enemy = Enemies('flying', xVpix-8, yVpix-8)
+            entities.add(enemy)
+            badguys.append(enemy)
+            animates.append(enemy)
+            del enemy
+            widthV = 1
+            heightV = 1
+            vortex = False
+
+
+        for e in entities:
+            SURFACE.blit(e.face, camera.apply(e))
+
+        
+        if entities.has(vortrectx):     # if vortrectx is an entity then...
+            entities.remove(vortrectx)  # remove vortrectx from entities group so it doesn't stay on screen
+            
+
+        ##pygame.draw.rect(SURFACE, (255,0,0), user.rect)
+        ##for wall in walls:
+            ##pygame.draw.rect(SURFACE, (255,255,255), wall.rect)
+        
+        for blast in lasers:
+            pygame.draw.line(SURFACE, (0,255,0), (blast.x + camera.state.left,
+                blast.y + camera.state.top), (blast.xEnd + camera.state.left,
+                blast.yEnd + camera.state.top), 1)
+        
+        pygame.display.update()
+        
+######################################################
+#################### ENTITY CLASS ####################
+
+class Entity(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        
+######################################################
+#################### ANIMATE CLASS ####################
+        
+class Animate(Entity):
+
+    def __init__(self):
+        Entity.__init__(self)
+        entities.add(self)
+
+######################################################
+#################### PLAYER CLASS ####################
+
+class Player(Entity):
+    '''This class is for the User'''
+    
+    def __init__(self):
+        Entity.__init__(self)
+        self.rect = pygame.Rect(320, 32, 16, 16)
+        self.face = pygame.Surface((16,16))
+        self.face.fill(pygame.Color(255,0,0))
+        self.face.convert()
+        self.rect.x = 320
+        self.rect.y = 32
+        self.row = int(self.rect.y / 16)      # represents row and column in the designed map
+        self.col = int(self.rect.x / 16)
+        self.health = 100
+        self.force = 0          # used in physics engine
+        self.yVel = 0
+        self.acc = 9.8
+        self.mass = 2
+        self.onGround = False
+        
+
+    def move(self, dx, dy):
+        if dx != 0:
+            self.moveAxis(dx, 0)
+        if dy != 0:
+            self.moveAxis(0, dy)
+            
+    def playerJump(self, ups):
+        jump = pygame.key.get_pressed()
+        if jump[pygame.K_UP]:
+            self.onGround = False
+            self.force = ups
+            self.yVel = ups
+
+    def moveAxis(self, dx, dy):
+        # move the rect
+        self.rect.x += dx
+        self.rect.y += dy
+
+        if dy != 0:             # TESTING
+            pass
+            ##print 'dy:', dy
+        # if you collide with a wall, move out based on velocity
+        for wall in walls:
+            if self.rect.colliderect(wall.rect):
+                if dx > 0:  # moving right; hit the left side of the wall
+                    self.rect.right = wall.rect.left
+                    self.playerJump(-15)
+                if dx < 0:  # moving left, hit right side of the wall
+                    self.rect.left = wall.rect.right
+                    self.playerJump(-15)
+                if dy > 0:  # moving down, hit top of the wall
+                    self.rect.bottom = wall.rect.top
+                    self.onGround = True
+                    self.playerJump(-20)
+                if dy < 0:  # moving up, hit bottom of the wall
+                    self.rect.top = wall.rect.bottom
+                    self.force *= .60   # to correct for floating on a ceiling during jump
+                    up = pygame.key.get_pressed() 
+                    if up[pygame.K_UP]:
+                        self.playerJump(-15)
+        self.row = int(self.rect.y / 16)
+        self.col = int(self.rect.x / 16)
+        ##print 'row', self.row
+        ##print 'col', self.col
+                        
+    def death(self):
+        print 'you died'
+        pygame.exit()
+        sys.exit()
+                        
+######################################################
+#################### AnObject CLASS ####################
+
+class AnObject(Entity):
+    def __init__(self, color, x, y, w, h):
+        Entity.__init__(self)
+        self.rect = pygame.Rect(x, y, w, h)
+        self.face = pygame.Surface((w, h))
+        self.face.fill(color)
+        self.face.convert()
+
+######################################################
+#################### ENEMIES CLASS ####################
+
+class Enemies(Entity):
+    ''' This is the class for the enemies in 'first game.py' '''
+    
+    ID = 0
+
+    def __init__(self, type, x, y):
+        Entity.__init__(self)
+        self.ID = Enemies.ID
+        Enemies.ID += 1
+        self.type = type
+        self.rect = pygame.Rect(x, y, 16, 16)
+        self.rect.x = x
+        self.rect.y = y
+        self.row = int(y / 16)      # represents row and column in the designed map
+        self.col = int(x / 16)
+        
+        self = fgEnemy.getAll(self)
+        
+        '''self.face = pygame.Surface((16,16))
+        self.face.fill(pygame.Color(0,0,255))
+        self.face.convert()
+        self.health = 100
+        self.force = 0          # used in physics engine
+        self.yVel = 0
+        self.acc = 9.8
+        self.mass = 2
+        self.onGround = False'''
+        
+    def badJump(self):
+        if self.onGround == True or self.type == 'flying':       # comment this line out and make ups more positive to have a flying bad guy 
+        #ups += 7
+            self.onGround = False
+            self.force = self.ups
+            self.yVel = self.ups
+        
+    def move(self, dx, dy):
+        if dx == "jump":
+            self.badJump()
+        else:
+            if dx != 0:
+                self.moveAxis(dx, 0)
+            if dy != 0:
+                self.moveAxis(0, dy)
+            
+    def moveAxis(self, dx, dy):
+        # move the rect
+        self.rect.x += dx
+        self.rect.y += dy
+        
+        # if you collide with a wall, move out based on velocity
+        for wall in walls:
+            if self.rect.colliderect(wall.rect):
+                if dx > 0:  # moving right; hit the left side of the wall
+                    self.rect.right = wall.rect.left
+                    ##self.playerJump(-15)
+                if dx < 0:  # moving left, hit right side of the wall
+                    self.rect.left = wall.rect.right
+                    ##self.playerJump(-15)
+                if dy > 0:  # moving down, hit top of the wall
+                    self.rect.bottom = wall.rect.top
+                    self.onGround = True
+                    ##self.playerJump(-20)
+                if dy < 0:  # moving up, hit bottom of the wall
+                    self.rect.top = wall.rect.bottom
+                    self.force *= .60   # to correct for floating on a ceiling during jump
+                    ##up = pygame.key.get_pressed()
+                    ##if up[pygame.K_UP]:
+                        ##self.playerJump(-15)
+        #self.row = int(self.rect.y / 16)
+        #self.col = int(self.rect.x / 16)
+
+        for baddie in badguys:
+            if self.ID != baddie.ID:
+                if self.rect.colliderect(baddie.rect):
+                    if dx > 0:  # moving right; hit the left side of the baddie
+                        self.rect.right = baddie.rect.left
+                        ##self.playerJump(-15)
+                    if dx < 0:  # moving left, hit right side of the baddie
+                        self.rect.left = baddie.rect.right
+                        ##self.playerJump(-15)
+                    if dy > 0:  # moving down, hit top of the baddie
+                        self.rect.bottom = baddie.rect.top
+                        self.onGround = True
+                        ##self.playerJump(-20)
+                    if dy < 0:  # moving up, hit bottom of the baddie
+                        self.rect.top = baddie.rect.bottom
+                        self.force *= .60   # to correct for floating on a ceiling during jump
+                        ##up = pygame.key.get_pressed()
+                        ##if up[pygame.K_UP]:
+                            ##self.playerJump(-15)
+        self.row = int(self.rect.y / 16)
+        self.col = int(self.rect.x / 16)
+
+
+    # attempt to make the normal enemy track the user                        
+    def findUser(self):      # 5 X 16 = 80 pixels
+
+        #rowTemp = level1[self.row+]
+        for platform in platforms:
+            if (self.rect.bottom - platform.rect.top <= 80) and (self.rect.bottom - platform.rect.top > 0):     # find a platform to jump to
+                if self.rect.right != (platform.rect.left - 14) or self.rect.left != (platform.rect.right + 14):     # move towards platform
+                    if self.rect.left < platform.rect.centerx:       # move to left of platform
+                        return -1
+                    elif self.rect.left > platform.rect.centerx:    # move to right of platform
+                        return 1
+                if self.onGround == True:
+                    self.badJump()
+                elif self.rect.bottom != platform.rect.top:
+                    return 1
+                return 0
+        return 0
+            
+    def death(self):
+        badguys.remove(self)
+        entities.remove(self)
+
+######################################################
+#################### LASER CLASS ####################
+
+class Laser(Entity):
+    '''This class is for the lasers that the player shoots'''
+    
+    def __init__(self, direction):
+        Entity.__init__(self)
+
+        self.rect = pygame.Rect(320, 32, 16, 16)
+        self.face = pygame.Surface((16,16))
+
+        #self.face.fill(pygame.Color(255,0,0))
+        #self.face.convert()
+
+        self.direction = direction
+        self.length = 20
+        self.speed = 10
+        
+        if direction == 'right':
+            self.x = user.rect.x + 8
+            self.y = user.rect.y + 8
+            self.xEnd = self.x + self.length
+            self.yEnd = self.y
+        elif direction == 'left':
+            self.x = user.rect.x + 8
+            self.y = user.rect.y + 8
+            self.xEnd = self.x - self.length
+            self.yEnd = self.y
+        elif direction == 'up':
+            self.x = user.rect.x + 8
+            self.y = user.rect.y + 8
+            self.xEnd = self.x
+            self.yEnd = self.y - self.length
+        elif direction == 'down':
+            self.x = user.rect.x + 8
+            self.y = user.rect.y + 8
+            self.xEnd = self.x
+            self.yEnd = self.y + self.length
+        
+        
+    def move(self):
+        if self.direction == 'right':
+            self.x += self.speed
+            self.xEnd += self.speed
+        if self.direction == 'left':
+            self.x -= self.speed
+            self.xEnd -= self.speed
+        if self.direction == 'down':
+            self.y += self.speed            # self.x += self.speed
+            self.yEnd += self.speed       # no self.yEnd lines of code in this method
+        if self.direction == 'up':
+            self.y -= self.speed            # self.x += self.speed
+            self.yEnd -= self.speed
+            
+######################################################
+#################### WALL CLASS ####################
+
+class Wall(Entity):
+    '''This class is for a wall object. Walls are all walls - the W's and P's in the map'''
+    
+    def __init__(self, pos):
+        Entity.__init__(self)
+        walls.append(self)
+        self.rect = pygame.Rect(pos[0], pos[1], 16, 16)
+        self.face = pygame.Surface((16,16))
+        self.face.fill(pygame.Color(255,255,255))
+        self.face.convert()
+        
+######################################################
+#################### PLATFORM CLASS ####################
+        
+class Platform(Entity):
+    ''' This class is for a platform object. Platforms are only the P's in the map'''
+    
+    def __init__(self, pos):
+        Entity.__init__(self)
+        platforms.append(self)
+        self.rect = pygame.Rect(pos[0], pos[1], 16, 16)
+        self.face = pygame.Surface((16,16))
+        self.face.fill(pygame.Color(255,255,255))
+        self.face.convert()
+        
+######################################################
+#################### CAMERA CLASS ####################
+
+class Camera:
+    ''' This class is to define the camera view on the screen to allow scrolling '''
+    
+    def __init__(self, camera_func, width, height):
+        self.camera_func = camera_func
+        self.state = pygame.Rect(0, 0, width, height)
+    
+    def apply(self, target):
+        return target.rect.move(self.state.topleft)
+    
+    def update(self, target):
+        self.state = self.camera_func(self.state, target.rect)
+
+######################################################
+#################### FUNCTIONS ####################
+
+def simpleCamera(camera, target_rect):
+    x, y, _, _ = target_rect    # x and y take the x-coord and y-coord of target_rect argument.
+    _, _, w, h = camera     # w and h take the width and height of the camera argument.  "_" mean its a throw-away variable.
+    return pygame.Rect(-x + int(WIN_WIDTH/2), -y + int(WIN_HEIGHT/2), w, h)
+
+def complexCamera(camera, target_rect):
+    x, y, _, _ = target_rect
+    _, _, w, h = camera
+    x, y, _, _ = -x + int(WIN_WIDTH/2), -y + int(WIN_HEIGHT/2), w, h
+    
+    x = min(0,x)
+    x = max(-(camera.width - WIN_WIDTH), x)
+    y = min(0,y)
+    y = max(-(camera.height - WIN_HEIGHT), y)
+    return pygame.Rect(x, y, w, h)
+
+def badEntry(level, xV, yV):
+    '''Check to see if an enemy entry point or any of the 8 points immediately
+    around it are a wall or platform. If so it is a bad entry point and return
+    True'''
+    if level[yV][xV] == 'P' or level[yV][xV] == 'W' \
+    or level[yV-1][xV-1] == 'P' or level[yV-1][xV-1] == 'W' \
+    or level[yV-1][xV] == 'P' or level[yV-1][xV] == 'W' \
+    or level[yV-1][xV+1] == 'P' or level[yV-1][xV+1] == 'W' \
+    or level[yV][xV+1] == 'P' or level[yV][xV+1] == 'W' \
+    or level[yV+1][xV+1] == 'P' or level[yV+1][xV+1] == 'W' \
+    or level[yV+1][xV] == 'P' or level[yV+1][xV] == 'W' \
+    or level[yV+1][xV-1] == 'P' or level[yV+1][xV-1] == 'W' \
+    or level[yV][xV-1] == 'P' or level[yV][xV-1] == 'W':
+        return True
+
+# PHYSICS ENGINE
+def gravity(dt, thing):
+    force = thing.force + 11.8
+    acc = force / thing.mass
+    if thing.force < 0:
+        thing.force += 980 * (dt**2)
+    if thing.force > 0:
+        thing.force = 0
+    thing.move(0, acc)
+    return thing
+    
+    '''force = user.force + 11.8
+    acc = force / user.mass
+    if user.force < 0:
+        user.force += 980 * (dt**2)
+    if user.force > 0:
+        user.force = 0
+    user.move(0, acc)
+    return user'''
+    
+    
+def level1():
+    return [
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "W                                                                                        W",
+    "W                                                                                        W",
+    "W                      P   P                                                             W",
+    "W               PPPP                 PP                                                  W",
+    "W                                                                                        W",
+    "W                                                                                        W",
+    "W                                                                                        W",
+    "W                      P   P                    P                 PPPPPPPPPPPPPPP        W",
+    "W               PPPP                                                                     W",
+    "W                                      PPPPP           PP                            WWWWW",
+    "W                                                                                        W",
+    "W                                                                PPPP      PPPPPPPPPP    W",
+    "W                      P   P                                               W             W",
+    "W               PPPP                                                       W             W",
+    "W                                                                          W     PPPPPPPPW",
+    "W                                                                     ppp  W             W",
+    "W                                                                          WPPPPPPPP     W",
+    "W                      P   P                                               W             W",
+    "W               PPPP                                          PPPP         W       PPPPPPW",
+    "W                                                                          W             W",
+    "W                                                                          W             W",
+    "W                                          PP            PP                W             W",
+    "W                      P   P                                               W             W",
+    "W               PPPP                                                       W             W",
+    "W                                                 P                        W             W",
+    "W                                    PPP                                   W             W",
+    "W         PPPP                                           PPPPP             W             W",
+    "W                        P                                                 W             W",
+    "W                                                                   PP     W             W",
+    "W                          P      PPP                                      W             W",
+    "W     PPPP   PPPP                                                          W             W",
+    "W   P                               PPP                                  PPWPPPPPPPPPP   W",
+    "W  P P                                                                     W             W",
+    "W                                                                   PP     WPPPPPPPPPPPPPW",
+    "W         PPP                                                              W             W",
+    "W                                       PPPP                               W             W",
+    "WPP                                                                        W             W",
+    "W                   PPPP                                       PPPP       PWPPPPPPPPPP  PW",
+    "W                                                                          W             W",
+    "WPPP                          PPP                                                        W",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"   # this row must equal longest displayed row
+    ]
+        
+        
+######################################################
+
+if __name__ == "__main__":
+    main()

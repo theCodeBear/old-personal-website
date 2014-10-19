@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title> Portfolio </title>
+    <base target="_blank" />
+    <link rel="stylesheet" type="text/css" href="pagesStyles.css">
+
+    <style>
+        body {
+            font-size: 0.8em;
+        }
+        #canvas:hover:after {
+            position: absolute;
+            display: block;
+            content: attr(hint);
+            left: 70em;
+            background-color: rgba(100,50,50,0.7);
+            padding: 10px;
+            font-size: 0.7em;
+            -moz-border-radius: 10px;
+            -webkit-border-radius: 10px;
+            border-radius: 10px;
+            color: white;
+        }
+
+        img {
+            padding-top: 1em;
+            border-radius: 3em;
+        }
+        ul {
+            text-align: center;
+            width: 85em;
+            background-color: inherit;
+            padding: 0;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        li {
+            display: inline-block;
+            padding: 0 1em 1em 1em;
+        }
+    </style>
+
+</head>
+<body>
+    <section>
+        <header> Portfolio </header>
+        <ul>
+            <li> Python Game Demo <br>
+                <a href="PythonGame.html"><img src="pythonGame_screenShot.png" width="200" height="200"></a>
+            </li>
+
+            <li> Linear Algebra Encryption <br>
+                <a href="LinAlgebra.html"><img src="LinAlg_screenShot.png" width="200" height="200"></a>
+            </li>
+
+            <li> Assembly Game: Sigma Shooter</span><br>
+                <a href="SigmaShooter.html"><img src="SigmaShooter_screenShot.png" width="200" height="200"></a>
+            </li>
+
+            <li> HTML Canvas Drawing Demo <br>
+                <a id="canvas" hint="Canvas doesn't draw in Firefox. Button text display problems in Internet Explorer." href="canvasDemo.html"><img src="CanvasDraw_screenShot.png" width="200" height="200"></a>
+            </li>
+
+            <li> This Website <br>
+                <a href="thisWebsitePortfolio.html"><img src="canvasEdit.png" width="200" height="200"></a>
+            </li>
+
+            <li> Trail Maps Website (in-progress) <br>
+                <a href="TrailMaps"><img src="TrailMapsPic.png" width="200" height="200"></a>
+            </li>
+        </ul>
+    </section>
+</body>
+</html>
